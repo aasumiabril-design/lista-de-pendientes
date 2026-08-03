@@ -54,7 +54,7 @@
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-leaf text-blue-500 text-2xl"></i>
-                    <h1 class="text-2xl font-bold text-gray-900">Balance Diario</h1>
+                    <h1 class="text-2xl font-bold text-gray-900">Life Tracker</h1>
                 </div>
                 <div class="text-sm text-gray-500">
                     <span id="current-date-display"></span>
@@ -120,13 +120,6 @@
                 <!-- Journal Fields -->
                 <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6" id="journal-container">
                     <!-- Journal fields populated by JS -->
-                </div>
-
-                <!-- Save Button -->
-                <div class="mt-8 flex justify-end">
-                    <button onclick="saveDayData()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-colors flex items-center gap-2 w-full sm:w-auto justify-center">
-                        <i class="fas fa-save"></i> Guardar Día
-                    </button>
                 </div>
             </div>
         </section>
@@ -282,20 +275,20 @@
             journalFields: [] // Array of { id, name, icon }
         };
 
-        const COLOR_MAP = {
-            purple: { bg: 'bg-purple-100', text: 'text-purple-600', bar: 'bg-purple-500' },
-            green: { bg: 'bg-green-100', text: 'text-green-600', bar: 'bg-green-500' },
-            red: { bg: 'bg-red-100', text: 'text-red-600', bar: 'bg-red-500' },
-            pink: { bg: 'bg-pink-100', text: 'text-pink-600', bar: 'bg-pink-500' },
-            blue: { bg: 'bg-blue-100', text: 'text-blue-600', bar: 'bg-blue-500' },
-            yellow: { bg: 'bg-yellow-100', text: 'text-yellow-600', bar: 'bg-yellow-500' },
-            gray: { bg: 'bg-gray-100', text: 'text-gray-600', bar: 'bg-gray-400' }
-        };
+        function getHexColor(val) {
+            if (!val) return '#3b82f6';
+            if (val.startsWith('#')) return val;
+            const legacy = { purple: '#a855f7', green: '#22c55e', red: '#ef4444', pink: '#ec4899', blue: '#3b82f6', yellow: '#eab308', gray: '#6b7280' };
+            return legacy[val] || '#3b82f6';
+        }
 
         const AVAILABLE_ICONS = [
-            'fa-om', 'fa-wallet', 'fa-dumbbell', 'fa-heart', 'fa-users', 
-            'fa-star', 'fa-lightbulb', 'fa-leaf', 'fa-book', 'fa-briefcase',
-            'fa-smile', 'fa-sun', 'fa-moon', 'fa-music', 'fa-paint-brush'
+            'fa-hammer', 'fa-home', 'fa-heart', 'fa-star', 'fa-book', 
+            'fa-briefcase', 'fa-car', 'fa-utensils', 'fa-shopping-cart', 'fa-dumbbell',
+            'fa-bed', 'fa-sun', 'fa-moon', 'fa-music', 'fa-tree',
+            'fa-church', 'fa-hands-praying', 'fa-person-praying', 'fa-person-walking', 'fa-person-running',
+            'fa-bicycle', 'fa-cross', 'fa-spa', 'fa-laptop',
+            'fa-palette', 'fa-seedling', 'fa-paw', 'fa-mug-hot', 'fa-fire'
         ];
 
         let db = JSON.parse(localStorage.getItem('lifeTrackerDB')) || {}; // Key: YYYY-MM-DD, Value: DayData Object
@@ -469,7 +462,7 @@
                 areasContainer.innerHTML = '<p class="text-gray-400 text-sm italic">No has creado ninguna área aún.</p>';
             } else {
                 areasContainer.innerHTML = appConfig.categories.map((cat, catIdx) => {
-                    const colorCls = COLOR_MAP[cat.color];
+                    const hexColor = getHexColor(cat.color);
                     
                     const tasksHtml = cat.tasks.length === 0 
                         ? '<p class="text-xs text-gray-400 italic px-2">Sin actividades</p>'
@@ -486,10 +479,10 @@
                         `).join('');
 
                     return `
-                        <div class="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                            <div class="${colorCls.bg} px-4 py-3 flex items-center justify-between">
+                        <div class="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm border-l-4" style="border-left-color: ${hexColor};">
+                            <div class="bg-gray-50 px-4 py-3 flex items-center justify-between">
                                 <div class="flex items-center gap-2">
-                                    <i class="fas ${cat.icon} ${colorCls.text}"></i>
+                                    <i class="fas ${cat.icon}" style="color: ${hexColor};"></i>
                                     <h4 class="font-bold text-gray-800">${cat.name}</h4>
                                 </div>
                                 <div class="flex items-center gap-1 sm:gap-2">
@@ -534,35 +527,47 @@
         }
 
         // Area Form Logic
+        function selectModalIcon(type, icon) {
+            document.getElementById(`${type}-icon`).value = icon;
+            document.querySelectorAll(`.icon-btn-${type}`).forEach(btn => {
+                if (btn.getAttribute('data-icon') === icon) {
+                    btn.className = `icon-btn-${type} p-2 text-center rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-600 font-bold transition-all`;
+                } else {
+                    btn.className = `icon-btn-${type} p-2 text-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all`;
+                }
+            });
+        }
+
         function openAreaModal(areaId = null) {
             let area = areaId ? appConfig.categories.find(c => c.id === areaId) : null;
+            const selectedIcon = area ? area.icon : AVAILABLE_ICONS[0];
             
-            const colorOptions = Object.keys(COLOR_MAP).map(color => `
-                <option value="${color}" ${area && area.color === color ? 'selected' : ''}>${color.charAt(0).toUpperCase() + color.slice(1)}</option>
-            `).join('');
-
-            const iconOptions = AVAILABLE_ICONS.map(icon => `
-                <option value="${icon}" ${area && area.icon === icon ? 'selected' : ''}>${icon.replace('fa-', '')}</option>
+            const iconGridHtml = AVAILABLE_ICONS.map(icon => `
+                <button type="button" onclick="selectModalIcon('area', '${icon}')" class="icon-btn-area p-2 text-center rounded-lg border ${selectedIcon === icon ? 'border-2 border-blue-500 bg-blue-50 text-blue-600 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'} transition-all" data-icon="${icon}">
+                    <i class="fas ${icon} text-lg"></i>
+                </button>
             `).join('');
 
             const html = `
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Área</label>
-                        <input type="text" id="area-name" class="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej. Física, Emocional..." value="${area ? area.name : ''}">
+                        <input type="text" id="area-name" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej. Física, Emocional..." value="${area ? area.name : ''}">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                            <select id="area-color" class="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                                ${colorOptions}
-                            </select>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                        <div class="flex items-center gap-3 bg-gray-50 p-2.5 border border-gray-200 rounded-lg">
+                            <input type="color" id="area-color" class="w-12 h-12 border-0 rounded cursor-pointer p-0 bg-transparent outline-none focus:ring-2 focus:ring-blue-500" value="${getHexColor(area ? area.color : '#3b82f6')}" title="Elegir color">
+                            <span class="text-sm text-gray-600 flex items-center gap-2 font-medium">
+                                <i class="fas fa-hand-pointer text-blue-500 text-lg"></i> Haz clic en el cuadro para cambiar el color
+                            </span>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Icono</label>
-                            <select id="area-icon" class="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none font-awesome-select">
-                                ${iconOptions}
-                            </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un Icono</label>
+                        <input type="hidden" id="area-icon" value="${selectedIcon}">
+                        <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-gray-50">
+                            ${iconGridHtml}
                         </div>
                     </div>
                 </div>
@@ -643,22 +648,26 @@
         // Journal Fields Logic
         function openJournalModal(fieldId = null) {
             const field = fieldId ? appConfig.journalFields.find(f => f.id === fieldId) : null;
+            const selectedIcon = field ? field.icon : AVAILABLE_ICONS[0];
             
-            const iconOptions = AVAILABLE_ICONS.map(icon => `
-                <option value="${icon}" ${field && field.icon === icon ? 'selected' : ''}>${icon.replace('fa-', '')}</option>
+            const iconGridHtml = AVAILABLE_ICONS.map(icon => `
+                <button type="button" onclick="selectModalIcon('journal', '${icon}')" class="icon-btn-journal p-2 text-center rounded-lg border ${selectedIcon === icon ? 'border-2 border-purple-500 bg-purple-50 text-purple-600 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'} transition-all" data-icon="${icon}">
+                    <i class="fas ${icon} text-lg"></i>
+                </button>
             `).join('');
 
             const html = `
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Título de la sección</label>
-                        <input type="text" id="journal-name" class="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej. Gratitud, Notas..." value="${field ? field.name : ''}">
+                        <input type="text" id="journal-name" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej. Gratitud, Notas..." value="${field ? field.name : ''}">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Icono</label>
-                        <select id="journal-icon" class="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
-                            ${iconOptions}
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un Icono</label>
+                        <input type="hidden" id="journal-icon" value="${selectedIcon}">
+                        <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-gray-50">
+                            ${iconGridHtml}
+                        </div>
                     </div>
                 </div>
             `;
@@ -710,7 +719,7 @@
 
             // Render Categories Grid
             categoriesContainer.innerHTML = appConfig.categories.map(cat => {
-                const colorCls = COLOR_MAP[cat.color];
+                const hexColor = getHexColor(cat.color);
                 
                 const tasksHtml = cat.tasks.map(task => `
                     <label class="flex items-start gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer group">
@@ -718,25 +727,33 @@
                                class="custom-checkbox mt-0.5 task-checkbox" 
                                data-category-id="${cat.id}" 
                                data-task-id="${task.id}"
-                               onchange="calculateLiveScores()">
-                        <span class="text-gray-700 text-sm group-hover:text-gray-900">${task.name}</span>
+                               onchange="toggleTask(this, '${cat.id}', '${task.id}')">
+                        <div class="flex-1 flex flex-col">
+                            <span class="text-gray-700 text-sm transition-all" id="task-name-${task.id}">${task.name}</span>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-[10px] text-gray-400 font-medium time-stamp" id="time-${task.id}"></span>
+                                <button type="button" id="edit-time-btn-${task.id}" onclick="editTaskTime('${task.id}', event)" class="hidden text-[11px] text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                    <i class="fas fa-pencil-alt text-[9px]"></i> Editar hora
+                                </button>
+                            </div>
+                        </div>
                     </label>
                 `).join('');
 
                 return `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                        <div class="${colorCls.bg} px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col border-t-4" style="border-top-color: ${hexColor};">
+                        <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-100">
                             <div class="flex items-center gap-2">
-                                <i class="fas ${cat.icon} ${colorCls.text}"></i>
+                                <i class="fas ${cat.icon}" style="color: ${hexColor};"></i>
                                 <h3 class="font-semibold text-gray-800">${cat.name}</h3>
                             </div>
-                            <span class="text-sm font-bold ${colorCls.text}" id="score-text-${cat.id}">0/${cat.tasks.length}</span>
+                            <span class="text-sm font-bold" style="color: ${hexColor};" id="score-text-${cat.id}">0/${cat.tasks.length}</span>
                         </div>
                         <div class="p-4 flex-1 flex flex-col gap-1">
                             ${tasksHtml || '<p class="text-sm text-gray-400 italic">No hay actividades</p>'}
                         </div>
                         <div class="h-1.5 w-full bg-gray-100">
-                            <div class="h-full score-bar ${colorCls.bar}" id="score-bar-${cat.id}" style="width: 0%"></div>
+                            <div class="h-full score-bar" id="score-bar-${cat.id}" style="background-color: ${hexColor}; width: 0%"></div>
                         </div>
                     </div>
                 `;
@@ -748,61 +765,72 @@
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                         <i class="fas ${field.icon} text-gray-500"></i> ${field.name}
                     </h3>
-                    <textarea id="journal-${field.id}" rows="4" class="w-full border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-shadow journal-input" placeholder="Escribe aquí..."></textarea>
+                    <textarea id="journal-${field.id}" rows="4" oninput="autoSaveDayData()" class="w-full border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-shadow journal-input" placeholder="Escribe aquí..."></textarea>
                 </div>
             `).join('');
 
             loadDayData();
         }
 
-        function calculateLiveScores() {
-            let totalTasks = 0;
-            let totalCompleted = 0;
-            let miniScoresHtml = '';
+        function toggleTask(checkbox, catId, taskId) {
+            const timeSpan = document.getElementById(`time-${taskId}`);
+            const nameSpan = document.getElementById(`task-name-${taskId}`);
+            const editBtn = document.getElementById(`edit-time-btn-${taskId}`);
 
-            appConfig.categories.forEach(cat => {
-                const checkboxes = document.querySelectorAll(`.task-checkbox[data-category-id="${cat.id}"]`);
-                let completed = 0;
+            if (checkbox.checked) {
+                const now = new Date();
+                const timeStr = checkbox.getAttribute('data-time') || now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                checkbox.setAttribute('data-time', timeStr);
                 
-                checkboxes.forEach(cb => { if (cb.checked) completed++; });
-
-                const totalCatTasks = cat.tasks.length;
-                totalTasks += totalCatTasks;
-                totalCompleted += completed;
-
-                // Update category UI
-                const scoreTextEl = document.getElementById(`score-text-${cat.id}`);
-                const scoreBarEl = document.getElementById(`score-bar-${cat.id}`);
-                
-                if(scoreTextEl) scoreTextEl.innerText = `${completed}/${totalCatTasks}`;
-                
-                const percentage = totalCatTasks === 0 ? 0 : (completed / totalCatTasks) * 100;
-                if(scoreBarEl) scoreBarEl.style.width = `${percentage}%`;
-
-                // Update Mini Scores
-                const colorCls = COLOR_MAP[cat.color];
-                if(totalCatTasks > 0) {
-                    miniScoresHtml += `
-                        <div class="flex flex-col items-center min-w-[60px]">
-                            <span class="text-xs text-gray-500 font-medium truncate w-16 text-center" title="${cat.name}">${cat.name}</span>
-                            <span class="text-lg font-bold ${colorCls.text}">${Math.round(percentage)}%</span>
-                        </div>
-                    `;
+                if (timeSpan) timeSpan.innerText = `(Completado: ${timeStr})`;
+                if (nameSpan) {
+                    nameSpan.classList.add('line-through', 'text-gray-400');
+                    nameSpan.classList.remove('text-gray-700');
                 }
-            });
+                if (editBtn) editBtn.classList.remove('hidden');
+                showToast('Actividad completada y guardada', 'success');
+            } else {
+                checkbox.removeAttribute('data-time');
+                if (timeSpan) timeSpan.innerText = '';
+                if (nameSpan) {
+                    nameSpan.classList.remove('line-through', 'text-gray-400');
+                    nameSpan.classList.add('text-gray-700');
+                }
+                if (editBtn) editBtn.classList.add('hidden');
+                showToast('Actividad desmarcada y actualizada', 'success');
+            }
+            calculateLiveScores();
+            autoSaveDayData();
+        }
 
-            const totalPercentage = totalTasks === 0 ? 0 : Math.round((totalCompleted / totalTasks) * 100);
+        function editTaskTime(taskId, event) {
+            event.preventDefault();
+            event.stopPropagation();
             
-            const totalScoreEl = document.getElementById('daily-total-score');
-            totalScoreEl.innerText = `${totalPercentage}%`;
-            totalScoreEl.className = `text-4xl font-bold mt-1 ${
-                totalTasks === 0 ? 'text-gray-400' :
-                totalPercentage >= 80 ? 'text-green-600' : 
-                totalPercentage >= 50 ? 'text-blue-600' : 
-                totalPercentage >= 30 ? 'text-orange-500' : 'text-red-500'
-            }`;
+            const cb = document.querySelector(`.task-checkbox[data-task-id="${taskId}"]`);
+            if (!cb || !cb.checked) return;
 
-            document.getElementById('daily-mini-scores').innerHTML = miniScoresHtml;
+            const currentTime = cb.getAttribute('data-time') || '12:00';
+
+            const html = `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ingresa la nueva hora de completado</label>
+                    <input type="time" id="new-task-time" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-medium" value="${currentTime}">
+                </div>
+            `;
+
+            openModal('Editar Hora', html, () => {
+                const newTime = document.getElementById('new-task-time').value;
+                if (!newTime) return false;
+
+                cb.setAttribute('data-time', newTime);
+                const timeSpan = document.getElementById(`time-${taskId}`);
+                if (timeSpan) timeSpan.innerText = `(Completado: ${newTime})`;
+
+                autoSaveDayData();
+                showToast('Hora actualizada correctamente', 'success');
+                return true;
+            });
         }
 
         function loadDayData() {
@@ -814,15 +842,60 @@
             const data = db[currentDate];
             
             // Reset UI
-            document.querySelectorAll('.task-checkbox').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.task-checkbox').forEach(cb => {
+                cb.checked = false;
+                cb.removeAttribute('data-time');
+                const tId = cb.getAttribute('data-task-id');
+                const timeSpan = document.getElementById(`time-${tId}`);
+                const nameSpan = document.getElementById(`task-name-${tId}`);
+                const editBtn = document.getElementById(`edit-time-btn-${tId}`);
+
+                if (timeSpan) timeSpan.innerText = '';
+                if (nameSpan) {
+                    nameSpan.classList.remove('line-through', 'text-gray-400');
+                    nameSpan.classList.add('text-gray-700');
+                }
+                if (editBtn) editBtn.classList.add('hidden');
+            });
             document.querySelectorAll('.journal-input').forEach(ta => ta.value = '');
 
             if (data) {
                 // Populate checkboxes
-                data.completedTasks.forEach(taskId => {
-                    const cb = document.querySelector(`.task-checkbox[data-task-id="${taskId}"]`);
-                    if (cb) cb.checked = true;
-                });
+                if (data.completedTasks) {
+                    if (Array.isArray(data.completedTasks)) {
+                        // Compatibility with old arrays
+                        data.completedTasks.forEach(taskId => {
+                            const cb = document.querySelector(`.task-checkbox[data-task-id="${taskId}"]`);
+                            const nameSpan = document.getElementById(`task-name-${taskId}`);
+                            if (cb) {
+                                cb.checked = true;
+                                if (nameSpan) {
+                                    nameSpan.classList.add('line-through', 'text-gray-400');
+                                    nameSpan.classList.remove('text-gray-700');
+                                }
+                            }
+                        });
+                    } else {
+                        // New key-value object format with completion times
+                        Object.entries(data.completedTasks).forEach(([taskId, timeStr]) => {
+                            const cb = document.querySelector(`.task-checkbox[data-task-id="${taskId}"]`);
+                            const timeSpan = document.getElementById(`time-${taskId}`);
+                            const nameSpan = document.getElementById(`task-name-${taskId}`);
+                            const editBtn = document.getElementById(`edit-time-btn-${taskId}`);
+
+                            if (cb) {
+                                cb.checked = true;
+                                cb.setAttribute('data-time', timeStr);
+                                if(timeSpan) timeSpan.innerText = `(Completado: ${timeStr})`;
+                                if (nameSpan) {
+                                    nameSpan.classList.add('line-through', 'text-gray-400');
+                                    nameSpan.classList.remove('text-gray-700');
+                                }
+                                if (editBtn) editBtn.classList.remove('hidden');
+                            }
+                        });
+                    }
+                }
                 
                 // Populate journal fields
                 if (data.journal) {
@@ -836,14 +909,11 @@
             calculateLiveScores();
         }
 
-        function saveDayData() {
-            if (appConfig.categories.length === 0 && appConfig.journalFields.length === 0) {
-                showToast('No hay nada configurado para guardar', 'error');
-                return;
-            }
+        function autoSaveDayData() {
+            if (appConfig.categories.length === 0 && appConfig.journalFields.length === 0) return;
 
-            const completedTasks = [];
-            const categoryScores = {}; // We store percentages at the time of saving
+            const completedTasks = {}; // Cambiado a objeto para guardar horas
+            const categoryScores = {}; 
             let totalTasksApp = 0;
             let totalCompletedApp = 0;
 
@@ -853,7 +923,9 @@
                 
                 checkboxes.forEach(cb => {
                     if (cb.checked) {
-                        completedTasks.push(cb.getAttribute('data-task-id'));
+                        const taskId = cb.getAttribute('data-task-id');
+                        const timeStr = cb.getAttribute('data-time') || 'Sin hora';
+                        completedTasks[taskId] = timeStr;
                         completed++;
                     }
                 });
@@ -882,8 +954,57 @@
                 journal
             };
 
-            saveData(); // Guardar el día en localStorage
-            showToast('Día guardado exitosamente');
+            saveData(); // Autoguardado silencioso
+        }
+
+        function calculateLiveScores() {
+            let totalTasks = 0;
+            let totalCompleted = 0;
+            let miniScoresHtml = '';
+
+            appConfig.categories.forEach(cat => {
+                const checkboxes = document.querySelectorAll(`.task-checkbox[data-category-id="${cat.id}"]`);
+                let completed = 0;
+                
+                checkboxes.forEach(cb => { if (cb.checked) completed++; });
+
+                const totalCatTasks = cat.tasks.length;
+                totalTasks += totalCatTasks;
+                totalCompleted += completed;
+
+                // Update category UI
+                const scoreTextEl = document.getElementById(`score-text-${cat.id}`);
+                const scoreBarEl = document.getElementById(`score-bar-${cat.id}`);
+                
+                if(scoreTextEl) scoreTextEl.innerText = `${completed}/${totalCatTasks}`;
+                
+                const percentage = totalCatTasks === 0 ? 0 : (completed / totalCatTasks) * 100;
+                if(scoreBarEl) scoreBarEl.style.width = `${percentage}%`;
+
+                // Update Mini Scores
+                const hexColor = getHexColor(cat.color);
+                if(totalCatTasks > 0) {
+                    miniScoresHtml += `
+                        <div class="flex flex-col items-center min-w-[60px]">
+                            <span class="text-xs text-gray-500 font-medium truncate w-16 text-center" title="${cat.name}">${cat.name}</span>
+                            <span class="text-lg font-bold" style="color: ${hexColor}">${Math.round(percentage)}%</span>
+                        </div>
+                    `;
+                }
+            });
+
+            const totalPercentage = totalTasks === 0 ? 0 : Math.round((totalCompleted / totalTasks) * 100);
+            
+            const totalScoreEl = document.getElementById('daily-total-score');
+            totalScoreEl.innerText = `${totalPercentage}%`;
+            totalScoreEl.className = `text-4xl font-bold mt-1 ${
+                totalTasks === 0 ? 'text-gray-400' :
+                totalPercentage >= 80 ? 'text-green-600' : 
+                totalPercentage >= 50 ? 'text-blue-600' : 
+                totalPercentage >= 30 ? 'text-orange-500' : 'text-red-500'
+            }`;
+
+            document.getElementById('daily-mini-scores').innerHTML = miniScoresHtml;
         }
 
         function renderMonthlyView() {
@@ -972,7 +1093,7 @@
 
                 appConfig.categories.forEach(cat => {
                     const stats = categoryStats[cat.id];
-                    const colorCls = COLOR_MAP[cat.color];
+                    const hexColor = getHexColor(cat.color);
                     
                     if (stats.count === 0) {
                         html += `
@@ -992,14 +1113,14 @@
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                             <div class="flex justify-between items-center mb-4">
                                 <div class="flex items-center gap-2">
-                                    <i class="fas ${cat.icon} ${colorCls.text}"></i>
+                                    <i class="fas ${cat.icon}" style="color: ${hexColor};"></i>
                                     <h4 class="font-semibold text-gray-800">${cat.name}</h4>
                                 </div>
-                                <span class="text-xl font-bold ${colorCls.text}">${avgScore}%</span>
+                                <span class="text-xl font-bold" style="color: ${hexColor};">${avgScore}%</span>
                             </div>
                             
                             <div class="w-full bg-gray-100 rounded-full h-2 mb-4">
-                                <div class="${colorCls.bar} h-2 rounded-full" style="width: ${avgScore}%"></div>
+                                <div class="h-2 rounded-full" style="background-color: ${hexColor}; width: ${avgScore}%"></div>
                             </div>
 
                             <div class="text-sm space-y-2">
@@ -1141,13 +1262,34 @@
                                     <tbody class="divide-y divide-gray-100 text-sm">
                 `;
 
+                // Mapear nombres de tareas para mostrarlos en el historial
+                const taskNameMap = {};
+                appConfig.categories.forEach(c => c.tasks.forEach(t => taskNameMap[t.id] = t.name));
+
                 m.days.forEach(day => {
                     const dayScoreColor = day.totalScore >= 80 ? 'text-green-600' : day.totalScore >= 50 ? 'text-blue-600' : 'text-red-500';
+                    
+                    let tasksDetailsHtml = '';
+                    if (day.completedTasks && !Array.isArray(day.completedTasks)) {
+                        const taskEntries = Object.entries(day.completedTasks);
+                        if (taskEntries.length > 0) {
+                            tasksDetailsHtml = `<div class="mt-2 pl-3 border-l-2 border-gray-200 space-y-1">`;
+                            taskEntries.forEach(([tId, time]) => {
+                                const tName = taskNameMap[tId] || 'Actividad eliminada';
+                                tasksDetailsHtml += `<div class="flex items-center gap-2 text-xs"><span class="text-gray-600 font-medium">${tName}</span> <span class="text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]"><i class="far fa-clock mr-1"></i>${time}</span></div>`;
+                            });
+                            tasksDetailsHtml += `</div>`;
+                        }
+                    }
+
                     html += `
                         <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="py-3 px-4 sm:px-6 text-gray-800 font-medium">${day.date}</td>
-                            <td class="py-3 px-4 sm:px-6 font-bold ${dayScoreColor}">${day.totalScore}%</td>
-                            <td class="py-3 px-4 sm:px-6 text-right flex justify-end gap-1">
+                            <td class="py-4 px-4 sm:px-6 text-gray-800 font-medium align-top">
+                                <div>${day.date}</div>
+                                ${tasksDetailsHtml}
+                            </td>
+                            <td class="py-4 px-4 sm:px-6 font-bold ${dayScoreColor} align-top text-lg">${day.totalScore}%</td>
+                            <td class="py-4 px-4 sm:px-6 text-right flex justify-end gap-1 align-top">
                                 <button onclick="editDayHistory('${day.date}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition-colors" title="Editar este día">
                                     <i class="fas fa-edit"></i>
                                 </button>
