@@ -3,22 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check List</title>
-    <!-- Favicon SVG integrado para la pestaña del navegador -->
+    <title>CHECK LIST</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪴</text></svg>">
+    
+    <meta name="theme-color" content="#3b82f6" id="theme-color-meta">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Life Tracker">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZmZmZiIvPjx0ZXh0IHk9Ii45ZW0iIGZvbnQtc2l6ZT0iOTAiPvCfjLE8L3RleHQ+PC9zdmc+">
+
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    
+    <!-- Evitar parpadeo (FOUC) al cargar la página -->
+    <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
+            transition: background-color 0.3s, color 0.3s;
         }
         .tab-active {
             border-bottom: 2px solid #3b82f6;
-            color: #3b82f6;
+            color: #3b82f6 !important;
             font-weight: 600;
+        }
+        .dark .tab-active {
+            border-bottom-color: #60a5fa;
+            color: #60a5fa !important;
         }
         .custom-checkbox {
             accent-color: #3b82f6;
@@ -47,32 +71,57 @@
         .score-bar {
             transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out;
         }
+        /* Ajuste de scrollbar para modo oscuro */
+        .dark ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; 
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 
-    <header class="bg-white shadow-sm sticky top-0 z-10">
+    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10 dark:border-b dark:border-gray-700 transition-colors duration-300">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-leaf text-blue-500 text-2xl"></i>
-                    <h1 class="text-2xl font-bold text-gray-900">Check List</h1>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Check List</h1>
                 </div>
-                <div class="text-sm text-gray-500">
-                    <span id="current-date-display"></span>
+                <div class="flex items-center gap-3 md:gap-4 text-sm text-gray-500 dark:text-gray-400">
+                    <!-- Botón Instalar PWA (Oculto por defecto hasta que el navegador lo permita) -->
+                    <button id="install-pwa-btn" onclick="installPWA()" class="hidden bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs px-3 py-1.5 transition-colors shadow-sm flex items-center gap-2">
+                        <i class="fas fa-download"></i> <span class="hidden sm:inline">Instalar App</span>
+                    </button>
+                    <!-- Botón de Modo Oscuro -->
+                    <button id="theme-toggle" onclick="toggleTheme()" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2 transition-colors">
+                        <i id="theme-toggle-dark-icon" class="hidden fas fa-moon text-lg"></i>
+                        <i id="theme-toggle-light-icon" class="hidden fas fa-sun text-lg"></i>
+                    </button>
+                    <span id="current-date-display" class="hidden sm:inline"></span>
                 </div>
             </div>
+            
             <nav class="flex gap-6 mt-2 overflow-x-auto" aria-label="Tabs">
-                <button onclick="switchTab('daily')" id="tab-daily" class="tab-active pb-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors whitespace-nowrap">
+                <button onclick="switchTab('daily')" id="tab-daily" class="tab-active pb-3 px-1 text-sm font-medium hover:text-gray-700 dark:hover:text-gray-300 transition-colors whitespace-nowrap">
                     <i class="fas fa-calendar-check mr-2"></i>Diario
                 </button>
-                <button onclick="switchTab('monthly')" id="tab-monthly" class="pb-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors whitespace-nowrap">
+                <button onclick="switchTab('monthly')" id="tab-monthly" class="pb-3 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors whitespace-nowrap">
                     <i class="fas fa-chart-pie mr-2"></i>Mes
                 </button>
-                <button onclick="switchTab('history')" id="tab-history" class="pb-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors whitespace-nowrap">
+                <button onclick="switchTab('history')" id="tab-history" class="pb-3 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors whitespace-nowrap">
                     <i class="fas fa-history mr-2"></i>Historial
                 </button>
-                <button onclick="switchTab('config')" id="tab-config" class="pb-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors whitespace-nowrap ml-auto">
+                <button onclick="switchTab('config')" id="tab-config" class="pb-3 px-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors whitespace-nowrap ml-auto">
                     <i class="fas fa-cog mr-2"></i>Configuración
                 </button>
             </nav>
@@ -85,28 +134,28 @@
         <section id="view-daily" class="block">
             <div class="flex justify-between items-end mb-6">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Tu día</h2>
-                    <p class="text-gray-500">Marca tus actividades y registra tus pensamientos.</p>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Tu día</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Marca tus actividades y registra tus pensamientos.</p>
                 </div>
                 <div>
-                    <input type="date" id="date-picker" class="border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" onchange="loadDayData()">
+                    <input type="date" id="date-picker" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors" onchange="loadDayData()">
                 </div>
             </div>
 
-            <div id="daily-empty-state" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-8 text-center mb-8">
-                <i class="fas fa-tools text-blue-400 text-4xl mb-3"></i>
-                <h3 class="text-lg font-medium text-blue-800">Tu diario está vacío</h3>
-                <p class="text-blue-600 mt-1 mb-4">Ve a la pestaña de Configuración para crear tus áreas y actividades.</p>
-                <button onclick="switchTab('config')" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Ir a Configuración</button>
+            <div id="daily-empty-state" class="hidden bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl p-8 text-center mb-8 transition-colors">
+                <i class="fas fa-tools text-blue-400 dark:text-blue-500 text-4xl mb-3"></i>
+                <h3 class="text-lg font-medium text-blue-800 dark:text-blue-300">Tu diario está vacío</h3>
+                <p class="text-blue-600 dark:text-blue-400 mt-1 mb-4">Ve a la pestaña de Configuración para crear tus áreas y actividades.</p>
+                <button onclick="switchTab('config')" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition-colors">Ir a Configuración</button>
             </div>
 
             <div id="daily-content-wrapper">
                 <!-- Score Overview -->
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-100">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-8 border border-gray-100 dark:border-gray-700 transition-colors">
                     <div class="flex flex-col md:flex-row justify-between items-center gap-6">
                         <div class="text-center md:text-left">
-                            <h3 class="text-lg font-semibold text-gray-700">Calificación General</h3>
-                            <div class="text-4xl font-bold text-gray-400 mt-1" id="daily-total-score">0%</div>
+                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Calificación General</h3>
+                            <div class="text-4xl font-bold text-gray-400 dark:text-gray-500 mt-1" id="daily-total-score">0%</div>
                         </div>
                         <div class="flex-1 w-full flex flex-wrap gap-4 justify-center md:justify-end" id="daily-mini-scores">
                             <!-- Mini scores populated by JS -->
@@ -130,11 +179,11 @@
         <section id="view-monthly" class="hidden">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Resumen Mensual</h2>
-                    <p class="text-gray-500">Analiza tu rendimiento a lo largo del mes.</p>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Resumen Mensual</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Analiza tu rendimiento a lo largo del mes.</p>
                 </div>
                 <div class="w-full sm:w-auto">
-                    <input type="month" id="month-picker" class="w-full sm:w-auto border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" onchange="renderMonthlyView()">
+                    <input type="month" id="month-picker" class="w-full sm:w-auto bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors" onchange="renderMonthlyView()">
                 </div>
             </div>
             <div id="monthly-content"></div>
@@ -144,35 +193,35 @@
         <section id="view-history" class="hidden">
             <div class="mb-6 flex justify-between items-end">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Historial General</h2>
-                    <p class="text-gray-500">Observa tu evolución, edita o elimina registros.</p>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Historial General</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Observa tu evolución, edita o elimina registros.</p>
                 </div>
             </div>
 
             <!-- Filtros -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-4 md:items-end">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 flex flex-col md:flex-row gap-4 md:items-end transition-colors">
                 <div class="flex-1">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Filtrar por Mes</label>
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Filtrar por Mes</label>
                     <div class="flex gap-2">
-                        <select id="history-month-filter" onchange="clearDateRangeAndRender()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <select id="history-month-filter" onchange="clearDateRangeAndRender()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
                             <option value="all">Todos los meses</option>
                             <!-- Opciones generadas por JS -->
                         </select>
                     </div>
                 </div>
-                <div class="hidden md:flex items-center text-gray-300 font-bold px-2 pb-2">O</div>
+                <div class="hidden md:flex items-center text-gray-300 dark:text-gray-600 font-bold px-2 pb-2">O</div>
                 <div class="flex-1 flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Desde</label>
-                        <input type="date" id="history-start-date" onchange="clearMonthAndRender()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Desde</label>
+                        <input type="date" id="history-start-date" onchange="clearMonthAndRender()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
                     </div>
                     <div class="flex-1">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Hasta</label>
-                        <input type="date" id="history-end-date" onchange="clearMonthAndRender()" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Hasta</label>
+                        <input type="date" id="history-end-date" onchange="clearMonthAndRender()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
                     </div>
                 </div>
                 <div class="pt-2 md:pt-0">
-                    <button onclick="clearAllFiltersAndRender()" class="w-full md:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2">
+                    <button onclick="clearAllFiltersAndRender()" class="w-full md:w-auto bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2">
                         <i class="fas fa-times-circle"></i> Limpiar Filtros
                     </button>
                 </div>
@@ -183,19 +232,39 @@
 
         <!-- ================= CONFIGURATION VIEW ================= -->
         <section id="view-config" class="hidden">
-            <div class="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+            <div class="mb-6 flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Configuración</h2>
-                    <p class="text-gray-500">Personaliza tus áreas, actividades y secciones de anotaciones.</p>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Configuración y Datos</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Personaliza tus áreas, notificaciones y gestiona tus copias de seguridad.</p>
                 </div>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <button onclick="exportConfig()" class="flex-1 sm:flex-none bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2 shadow-sm">
-                        <i class="fas fa-download"></i> Exportar
+                <div class="flex flex-wrap gap-2 w-full lg:w-auto">
+                    <button onclick="openExportChoiceModal()" class="flex-1 sm:flex-none bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/50 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2 shadow-sm" title="Exportar tus datos">
+                        <i class="fas fa-file-export"></i> Exportar
                     </button>
-                    <label class="flex-1 sm:flex-none bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer mb-0">
+                    <label class="flex-1 sm:flex-none bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer mb-0" title="Restaura una configuración o un backup completo">
                         <i class="fas fa-upload"></i> Importar
-                        <input type="file" accept=".json" class="hidden" onchange="importConfig(event)">
+                        <input type="file" accept=".json" class="hidden" onchange="importData(event)">
                     </label>
+                </div>
+            </div>
+
+            <!-- Panel de Notificaciones Globales -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 border border-gray-200 dark:border-gray-700 mb-8 transition-colors">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
+                            <i class="fas fa-bell text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800 dark:text-gray-100">Notificaciones y Recordatorios</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Recibe avisos periódicos si olvidas marcar tus actividades o escribir tus notas.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                        <button id="pwa-notif-btn" onclick="toggleGlobalNotifications()" class="px-4 py-2 rounded-full font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm border border-transparent">
+                            <!-- Populated dynamically by JS -->
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -203,10 +272,10 @@
                 <!-- Areas & Tasks Config -->
                 <div>
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-700 flex items-center gap-2">
+                        <h3 class="text-xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                             <i class="fas fa-layer-group text-blue-500"></i> Áreas y Actividades
                         </h3>
-                        <button onclick="openAreaModal()" class="text-sm bg-blue-100 text-blue-600 hover:bg-blue-200 px-3 py-1.5 rounded-lg font-medium transition-colors">
+                        <button onclick="openAreaModal()" class="text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/50 px-3 py-1.5 rounded-lg font-medium transition-colors">
                             + Nueva Área
                         </button>
                     </div>
@@ -219,10 +288,10 @@
                 <!-- Journal Fields Config -->
                 <div>
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-700 flex items-center gap-2">
+                        <h3 class="text-xl font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                             <i class="fas fa-book-open text-purple-500"></i> Secciones de Anotaciones
                         </h3>
-                        <button onclick="openJournalModal()" class="text-sm bg-purple-100 text-purple-600 hover:bg-purple-200 px-3 py-1.5 rounded-lg font-medium transition-colors">
+                        <button onclick="openJournalModal()" class="text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-800/50 px-3 py-1.5 rounded-lg font-medium transition-colors">
                             + Nueva Sección
                         </button>
                     </div>
@@ -237,33 +306,63 @@
     </main>
 
     <!-- Custom Modal -->
-    <div id="custom-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 id="modal-title" class="text-lg font-bold text-gray-800">Modal</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+    <div id="custom-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
+                <h3 id="modal-title" class="text-lg font-bold text-gray-800 dark:text-white">Modal</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times"></i></button>
             </div>
             <div id="modal-body" class="p-6 overflow-y-auto">
                 <!-- Content injected here -->
             </div>
-            <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
-                <button onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
+            <div class="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3 bg-gray-50 dark:bg-gray-700/50">
+                <button onclick="closeModal()" class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors">Cancelar</button>
                 <button id="modal-confirm" onclick="confirmModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">Guardar</button>
             </div>
         </div>
     </div>
 
     <!-- Confirm Dialog -->
-    <div id="confirm-dialog" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 text-center">
-            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
+    <div id="confirm-dialog" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-[60] p-4 transition-opacity">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm p-6 text-center">
+            <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-2xl text-red-600 dark:text-red-500"></i>
             </div>
-            <h3 id="confirm-title" class="text-lg font-bold text-gray-800 mb-2">¿Estás seguro?</h3>
-            <p id="confirm-message" class="text-gray-500 mb-6 text-sm">Esta acción no se puede deshacer.</p>
+            <h3 id="confirm-title" class="text-lg font-bold text-gray-800 dark:text-white mb-2">¿Estás seguro?</h3>
+            <p id="confirm-message" class="text-gray-500 dark:text-gray-400 mb-6 text-sm">Esta acción no se puede deshacer.</p>
             <div class="flex justify-center gap-3">
-                <button onclick="closeConfirmDialog()" class="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors w-full">Cancelar</button>
-                <button id="confirm-action-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium w-full">Eliminar</button>
+                <button onclick="closeConfirmDialog()" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors w-full">Cancelar</button>
+                <button id="confirm-action-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium w-full">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Choice Modal -->
+    <div id="export-choice-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-[60] p-4 transition-opacity">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">¿Qué quieres exportar?</h3>
+                <button onclick="closeExportChoiceModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <button onclick="exportConfig(); closeExportChoiceModal();" class="w-full text-left p-4 rounded-xl border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-start gap-3">
+                    <div class="w-10 h-10 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800 dark:text-gray-100">Solo Configuración</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Guarda tus áreas, actividades, secciones de anotaciones y notificaciones. <strong>No incluye</strong> el historial de días registrados. Ideal para pasar tu configuración a otro dispositivo sin cargar todos tus datos.</p>
+                    </div>
+                </button>
+                <button onclick="exportFullBackup(); closeExportChoiceModal();" class="w-full text-left p-4 rounded-xl border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-start gap-3">
+                    <div class="w-10 h-10 shrink-0 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800 dark:text-gray-100">Backup Completo</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Guarda tu configuración <strong>y también</strong> todo tu historial de días registrados. Recomendado para tener una copia de seguridad completa de tu progreso.</p>
+                    </div>
+                </button>
             </div>
         </div>
     </div>
@@ -273,9 +372,273 @@
     <script>
         // Data Structures & State
         let appConfig = JSON.parse(localStorage.getItem('lifeTrackerConfig')) || {
-            categories: [], // Array of { id, name, color, icon, tasks: [{id, name}] }
-            journalFields: [] // Array of { id, name, icon }
+            categories: [],
+            journalFields: [],
+            notificationSettings: {
+                enabled: false
+            }
         };
+
+        if (!appConfig.notificationSettings) {
+            appConfig.notificationSettings = { enabled: false };
+        }
+
+        // Estado en memoria para rastrear notificaciones enviadas en el día
+        let notificationLog = {};
+
+        function saveData() {
+            localStorage.setItem('lifeTrackerConfig', JSON.stringify(appConfig));
+            localStorage.setItem('lifeTrackerDB', JSON.stringify(db));
+        }
+
+        function generateId() {
+            return 'id_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function updateDateDisplay() {
+            const dateEl = document.getElementById('current-date-display');
+            if (!dateEl) return;
+            if (!currentDate) return;
+            const [year, month, day] = currentDate.split('-').map(Number);
+            const dateObj = new Date(year, month - 1, day);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const formatted = dateObj.toLocaleDateString('es-ES', options);
+            dateEl.innerText = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+        }
+
+        function switchTab(tabName) {
+            const views = ['daily', 'monthly', 'history', 'config'];
+            views.forEach(view => {
+                const viewEl = document.getElementById(`view-${view}`);
+                const tabBtn = document.getElementById(`tab-${view}`);
+                if (viewEl) {
+                    if (view === tabName) {
+                        viewEl.classList.remove('hidden');
+                        viewEl.classList.add('block');
+                    } else {
+                        viewEl.classList.add('hidden');
+                        viewEl.classList.remove('block');
+                    }
+                }
+                if (tabBtn) {
+                    if (view === tabName) {
+                        tabBtn.classList.add('tab-active');
+                        tabBtn.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    } else {
+                        tabBtn.classList.remove('tab-active');
+                        tabBtn.classList.add('text-gray-500', 'dark:text-gray-400');
+                    }
+                }
+            });
+
+            if (tabName === 'monthly') renderMonthlyView();
+            if (tabName === 'history') renderHistoryView();
+            if (tabName === 'config') renderConfigView();
+            if (tabName === 'daily') loadDayData();
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bgColors = {
+                success: 'bg-green-600 text-white',
+                error: 'bg-red-600 text-white',
+                info: 'bg-blue-600 text-white',
+                warning: 'bg-yellow-500 text-white'
+            };
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle',
+                warning: 'fa-exclamation-triangle'
+            };
+
+            toast.className = `${bgColors[type] || bgColors.info} px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 text-sm font-medium toast-enter z-50`;
+            toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-enter-active');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('toast-exit-active');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function openModal(title, bodyHtml, confirmCallback) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerHTML = bodyHtml;
+            activeModalCallback = confirmCallback;
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.add('hidden');
+            activeModalCallback = null;
+        }
+
+        function confirmModal() {
+            if (activeModalCallback) {
+                const success = activeModalCallback();
+                if (success !== false) {
+                    closeModal();
+                }
+            } else {
+                closeModal();
+            }
+        }
+
+        function selectModalIcon(type, icon) {
+            const input = document.getElementById(`${type}-icon`);
+            if (input) input.value = icon;
+
+            const buttons = document.querySelectorAll(`.icon-btn-${type}`);
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-icon') === icon) {
+                    btn.className = `icon-btn-${type} p-2 text-center rounded-lg border border-2 ${type === 'area' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'} font-bold transition-all`;
+                } else {
+                    btn.className = `icon-btn-${type} p-2 text-center rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all`;
+                }
+            });
+        }
+
+        function openConfirmDialog(title, message, actionCallback, btnClass = 'bg-blue-600') {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-message').innerText = message;
+            const actionBtn = document.getElementById('confirm-action-btn');
+            actionBtn.className = `px-4 py-2 ${btnClass} hover:opacity-90 text-white rounded-lg transition-colors font-medium w-full`;
+            
+            activeConfirmCallback = actionCallback;
+            actionBtn.onclick = () => {
+                if (activeConfirmCallback) activeConfirmCallback();
+                closeConfirmDialog();
+            };
+
+            document.getElementById('confirm-dialog').classList.remove('hidden');
+        }
+
+        function closeConfirmDialog() {
+            document.getElementById('confirm-dialog').classList.add('hidden');
+            activeConfirmCallback = null;
+        }
+
+        function moveItem(array, index, direction) {
+            const newIndex = index + direction;
+            if (newIndex >= 0 && newIndex < array.length) {
+                const temp = array[index];
+                array[index] = array[newIndex];
+                array[newIndex] = temp;
+            }
+        }
+
+        function moveArea(index, direction) {
+            moveItem(appConfig.categories, index, direction);
+            renderConfigView();
+            renderDailyView();
+        }
+
+        function deleteArea(areaId) {
+            openConfirmDialog('Eliminar Área', 'Se eliminará esta área y todas sus actividades asociadas.', () => {
+                appConfig.categories = appConfig.categories.filter(c => c.id !== areaId);
+                showToast('Área eliminada');
+                renderConfigView();
+                renderDailyView();
+            }, 'bg-red-600');
+        }
+
+        function moveTask(areaId, taskIndex, direction) {
+            const area = appConfig.categories.find(c => c.id === areaId);
+            if (area) {
+                moveItem(area.tasks, taskIndex, direction);
+                renderConfigView();
+                renderDailyView();
+            }
+        }
+
+        function deleteTask(areaId, taskId) {
+            openConfirmDialog('Eliminar Actividad', 'Se eliminará esta actividad.', () => {
+                const area = appConfig.categories.find(c => c.id === areaId);
+                if (area) {
+                    area.tasks = area.tasks.filter(t => t.id !== taskId);
+                    showToast('Actividad eliminada');
+                    renderConfigView();
+                    renderDailyView();
+                }
+            }, 'bg-red-600');
+        }
+
+        function openExportChoiceModal() {
+            document.getElementById('export-choice-modal').classList.remove('hidden');
+        }
+
+        function closeExportChoiceModal() {
+            document.getElementById('export-choice-modal').classList.add('hidden');
+        }
+
+        function exportConfig() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appConfig, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `life_tracker_config_${currentDate}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Configuración exportada con éxito', 'success');
+        }
+
+        function exportFullBackup() {
+            const fullData = {
+                config: appConfig,
+                db: db,
+                version: "1.0"
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `life_tracker_backup_completo_${currentDate}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Backup completo exportado con éxito', 'success');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.categories && imported.journalFields) {
+                        appConfig = imported;
+                        showToast('Configuración importada correctamente', 'success');
+                    } else if (imported.config && imported.db) {
+                        appConfig = imported.config;
+                        db = imported.db;
+                        showToast('Backup completo restaurado con éxito', 'success');
+                    } else {
+                        showToast('Formato de archivo no válido', 'error');
+                        return;
+                    }
+                    saveData();
+                    renderConfigView();
+                    renderDailyView();
+                } catch (err) {
+                    showToast('Error al leer el archivo JSON', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
 
         function getHexColor(val) {
             if (!val) return '#3b82f6';
@@ -293,212 +656,306 @@
             'fa-palette', 'fa-seedling', 'fa-paw', 'fa-mug-hot', 'fa-fire'
         ];
 
-        let db = JSON.parse(localStorage.getItem('lifeTrackerDB')) || {}; // Key: YYYY-MM-DD, Value: DayData Object
+        let db = JSON.parse(localStorage.getItem('lifeTrackerDB')) || {}; 
         let currentDate = new Date().toISOString().split('T')[0];
 
         // Modal Variables
         let activeModalCallback = null;
         let activeConfirmCallback = null;
 
+        // PWA & Install Variables
+        let deferredPrompt = null;
+
+        // Theme Setup
+        function initTheme() {
+            const darkIcon = document.getElementById('theme-toggle-dark-icon');
+            const lightIcon = document.getElementById('theme-toggle-light-icon');
+            
+            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                lightIcon.classList.remove('hidden');
+            } else {
+                darkIcon.classList.remove('hidden');
+            }
+        }
+
+        function toggleTheme() {
+            const darkIcon = document.getElementById('theme-toggle-dark-icon');
+            const lightIcon = document.getElementById('theme-toggle-light-icon');
+            
+            darkIcon.classList.toggle('hidden');
+            lightIcon.classList.toggle('hidden');
+
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+                document.getElementById('theme-color-meta').setAttribute('content', '#ffffff');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+                document.getElementById('theme-color-meta').setAttribute('content', '#1f2937');
+            }
+        }
+
         window.onload = () => {
             document.getElementById('date-picker').value = currentDate;
             document.getElementById('month-picker').value = currentDate.substring(0, 7);
             
+            initTheme();
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('theme-color-meta').setAttribute('content', isDark ? '#1f2937' : '#ffffff');
+            
             updateDateDisplay();
-            renderConfigView(); // Render config first to set up UI
+            renderConfigView(); 
             renderDailyView();
+            initPWA();
+            initNotificationsEngine();
         };
 
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        // Clases base fijas del botón de notificaciones (forma de píldora, curvo).
+        // Se mantienen siempre iguales; solo cambian los colores según el estado.
+        const NOTIF_BTN_BASE_CLASS = "px-4 py-2 rounded-full font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm border";
+
+        function updateNotificationBtnUI() {
+            const btn = document.getElementById('pwa-notif-btn');
+            if (!btn) return;
+
+            if (!("Notification" in window)) {
+                btn.className = `${NOTIF_BTN_BASE_CLASS} bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-transparent cursor-not-allowed`;
+                btn.innerHTML = '<i class="fas fa-bell-slash"></i> No Soportado';
+                btn.disabled = true;
+                return;
+            }
+
+            btn.disabled = false;
+
+            if (Notification.permission === "granted" && appConfig.notificationSettings.enabled) {
+                btn.className = `${NOTIF_BTN_BASE_CLASS} bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-200 dark:hover:bg-green-900/50`;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Notificaciones Activas';
+            } else if (Notification.permission === "denied") {
+                btn.className = `${NOTIF_BTN_BASE_CLASS} bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800 cursor-not-allowed`;
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Permiso Bloqueado';
+            } else {
+                btn.className = `${NOTIF_BTN_BASE_CLASS} bg-blue-600 hover:bg-blue-700 text-white border-transparent`;
+                btn.innerHTML = '<i class="fas fa-bell"></i> Activar Notificaciones';
+            }
         }
 
-        function switchTab(tabName) {
-            ['daily', 'monthly', 'history', 'config'].forEach(tab => {
-                const el = document.getElementById(`tab-${tab}`);
-                if (tab === tabName) {
-                    el.classList.add('tab-active');
-                    el.classList.remove('text-gray-500');
+        async function toggleGlobalNotifications() {
+            if (!("Notification" in window)) {
+                showToast("Tu navegador no soporta notificaciones", "error");
+                return;
+            }
+
+            if (Notification.permission === "denied") {
+                showToast("Has bloqueado las notificaciones en la configuración de tu navegador", "error");
+                return;
+            }
+
+            if (Notification.permission === "default") {
+                const permission = await Notification.requestPermission();
+                if (permission === "granted") {
+                    appConfig.notificationSettings.enabled = true;
+                    showToast("¡Notificaciones activadas con éxito!", "success");
                 } else {
-                    el.classList.remove('tab-active');
-                    el.classList.add('text-gray-500');
+                    appConfig.notificationSettings.enabled = false;
+                    showToast("Permiso de notificaciones denegado", "error");
                 }
-                
-                const section = document.getElementById(`view-${tab}`);
-                if (tab === tabName) {
-                    section.classList.remove('hidden');
-                    section.classList.add('block');
-                } else {
-                    section.classList.add('hidden');
-                    section.classList.remove('block');
+            } else if (Notification.permission === "granted") {
+                appConfig.notificationSettings.enabled = !appConfig.notificationSettings.enabled;
+                const status = appConfig.notificationSettings.enabled ? "activadas" : "desactivadas";
+                showToast(`Notificaciones ${status}`, "success");
+            }
+
+            saveData();
+            updateNotificationBtnUI();
+        }
+
+        function initNotificationsEngine() {
+            updateNotificationBtnUI();
+            // Revisar recordatorios cada 30 segundos
+            setInterval(checkAndTriggerNotifications, 30000);
+            checkAndTriggerNotifications();
+        }
+
+        function sendSystemNotification(title, body, tag) {
+            if (Notification.permission === "granted" && appConfig.notificationSettings.enabled) {
+                try {
+                    new Notification(title, {
+                        body: body,
+                        icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn4yxPC90ZXh0Pjwvc3ZnPg==",
+                        tag: tag
+                    });
+                } catch(e) {
+                    console.warn("Error enviando notificación nativa:", e);
                 }
+            }
+        }
+
+        function checkAndTriggerNotifications() {
+            if (!appConfig.notificationSettings?.enabled || Notification.permission !== "granted") return;
+
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            const todayData = db[todayStr] || {};
+            const completedTasks = todayData.completedTasks || {};
+            const journalData = todayData.journal || {};
+
+            // Helper para procesar una regla de notificación
+            const evaluateItemNotification = (id, name, typeLabel, notifConfig, isCompletedCheck, kind = 'task') => {
+                if (!notifConfig || !notifConfig.enabled || !notifConfig.time) return;
+
+                // Si ya está completado/respondido, reiniciamos su historial y NO notificamos
+                if (isCompletedCheck()) {
+                    delete notificationLog[id];
+                    return;
+                }
+
+                const [h, m] = notifConfig.time.split(':').map(Number);
+                const targetMinutes = h * 60 + m;
+
+                // Si la hora aún no ha llegado hoy, no notificar
+                if (currentMinutes < targetMinutes) return;
+
+                const maxRepeats = parseInt(notifConfig.maxRepeats || 1);
+                const repeatInterval = parseInt(notifConfig.intervalMinutes || 15);
+
+                if (!notificationLog[id]) {
+                    notificationLog[id] = { count: 0, lastSentTime: 0, date: todayStr };
+                }
+
+                const log = notificationLog[id];
+                if (log.date !== todayStr) {
+                    log.count = 0;
+                    log.lastSentTime = 0;
+                    log.date = todayStr;
+                }
+
+                // Verificar si superó las repeticiones configuradas
+                if (log.count >= maxRepeats) return;
+
+                // Verificar si ya transcurrió el intervalo necesario desde la última notificación
+                const nowTimestamp = Date.now();
+                const intervalMs = repeatInterval * 60 * 1000;
+
+                if (log.count === 0 || (nowTimestamp - log.lastSentTime >= intervalMs)) {
+                    log.count++;
+                    log.lastSentTime = nowTimestamp;
+
+                    const title = '⏰ Life Tracker';
+                    const repeatInfo = maxRepeats > 1 ? ` (Aviso ${log.count}/${maxRepeats})` : '';
+
+                    let body;
+                    if (kind === 'area') {
+                        body = `No olvides marcar tus actividades pendientes en el área "${name}"${repeatInfo}`;
+                    } else if (kind === 'journal') {
+                        body = `No olvides completar tu nota de "${name}"${repeatInfo}`;
+                    } else {
+                        body = `No olvides marcar tu actividad de "${name}" (${typeLabel})${repeatInfo}`;
+                    }
+
+                    sendSystemNotification(title, body, `lt-notif-${id}`);
+                }
+            };
+
+            // 1. Evaluar Actividades e Indicadores por Área
+            appConfig.categories.forEach(cat => {
+                // Notificación por Actividades individuales
+                cat.tasks.forEach(task => {
+                    evaluateItemNotification(
+                        task.id,
+                        task.name,
+                        `Área ${cat.name}`,
+                        task.notif,
+                        () => !!completedTasks[task.id],
+                        'task'
+                    );
+                });
+
+                // Notificación por Área general (ej: si no ha completado todo el área)
+                evaluateItemNotification(
+                    cat.id,
+                    cat.name,
+                    'Área General',
+                    cat.notif,
+                    () => {
+                        const catTasks = cat.tasks;
+                        if (catTasks.length === 0) return true;
+                        return catTasks.every(t => !!completedTasks[t.id]);
+                    },
+                    'area'
+                );
             });
 
-            if (tabName === 'daily') renderDailyView();
-            if (tabName === 'monthly') renderMonthlyView();
-            if (tabName === 'history') renderHistoryView();
-            if (tabName === 'config') renderConfigView();
-        }
-
-        function updateDateDisplay() {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            // Manejamos la zona horaria añadiendo un mediodía artificial para que no se corra un día atrás
-            const dateStr = new Date(currentDate + 'T12:00:00').toLocaleDateString('es-ES', options);
-            document.getElementById('current-date-display').innerText = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-        }
-
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
-            
-            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 toast-enter toast-enter-active`;
-            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.classList.remove('toast-enter', 'toast-enter-active');
-                toast.classList.add('toast-exit', 'toast-exit-active');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        function openModal(title, bodyHtml, onConfirm) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-body').innerHTML = bodyHtml;
-            activeModalCallback = onConfirm;
-            document.getElementById('custom-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('custom-modal').classList.add('hidden');
-            activeModalCallback = null;
-        }
-
-        function confirmModal() {
-            if (activeModalCallback) {
-                const shouldClose = activeModalCallback();
-                if(shouldClose !== false) closeModal();
-            }
-        }
-
-        function openConfirmDialog(title, message, onConfirm) {
-            document.getElementById('confirm-title').innerText = title;
-            document.getElementById('confirm-message').innerText = message;
-            
-            const btn = document.getElementById('confirm-action-btn');
-            btn.onclick = () => {
-                onConfirm();
-                closeConfirmDialog();
-            };
-            
-            document.getElementById('confirm-dialog').classList.remove('hidden');
-        }
-
-        function closeConfirmDialog() {
-            document.getElementById('confirm-dialog').classList.add('hidden');
-        }
-
-        // Save data to localStorage
-        function saveData() {
-            localStorage.setItem('lifeTrackerConfig', JSON.stringify(appConfig));
-            localStorage.setItem('lifeTrackerDB', JSON.stringify(db));
-        }
-
-        // Export/Import Configuration
-        function exportConfig() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appConfig));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "life_tracker_config.json");
-            document.body.appendChild(downloadAnchorNode); 
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-            showToast('Configuración exportada exitosamente');
-        }
-
-        function importConfig(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedConfig = JSON.parse(e.target.result);
-                    if (importedConfig.categories && importedConfig.journalFields) {
-                        appConfig = importedConfig;
-                        saveData();
-                        renderConfigView();
-                        renderDailyView();
-                        showToast('Configuración importada exitosamente');
-                    } else {
-                        showToast('El archivo no tiene el formato correcto', 'error');
-                    }
-                } catch (error) {
-                    showToast('Error al leer el archivo', 'error');
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; // Reset input so you can re-import the same file if needed
-        }
-
-        // Helper to swap array elements
-        function moveItem(array, index, direction) {
-            if (direction === -1 && index > 0) {
-                [array[index - 1], array[index]] = [array[index], array[index - 1]];
-            } else if (direction === 1 && index < array.length - 1) {
-                [array[index + 1], array[index]] = [array[index], array[index + 1]];
-            }
+            // 2. Evaluar Secciones de Anotación (Diario)
+            appConfig.journalFields.forEach(field => {
+                evaluateItemNotification(
+                    field.id,
+                    field.name,
+                    'Sección de Anotaciones',
+                    field.notif,
+                    () => !!journalData[field.id] && journalData[field.id].trim().length > 0,
+                    'journal'
+                );
+            });
         }
 
         function renderConfigView() {
-            // Cada vez que se renderiza la vista de configuración es porque hubo un cambio, guardamos.
             saveData(); 
+            updateNotificationBtnUI();
 
             const areasContainer = document.getElementById('config-areas-list');
             const journalContainer = document.getElementById('config-journal-list');
 
-            // Render Areas
             if (appConfig.categories.length === 0) {
-                areasContainer.innerHTML = '<p class="text-gray-400 text-sm italic">No has creado ninguna área aún.</p>';
+                areasContainer.innerHTML = '<p class="text-gray-400 dark:text-gray-500 text-sm italic">No has creado ninguna área aún.</p>';
             } else {
                 areasContainer.innerHTML = appConfig.categories.map((cat, catIdx) => {
                     const hexColor = getHexColor(cat.color);
                     
                     const tasksHtml = cat.tasks.length === 0 
-                        ? '<p class="text-xs text-gray-400 italic px-2">Sin actividades</p>'
-                        : cat.tasks.map((task, tIdx) => `
-                            <div class="flex items-center justify-between py-1.5 px-2 hover:bg-gray-50 rounded group">
-                                <span class="text-sm text-gray-700">${task.name}</span>
+                        ? '<p class="text-xs text-gray-400 dark:text-gray-500 italic px-2">Sin actividades</p>'
+                        : cat.tasks.map((task, tIdx) => {
+                            const hasNotif = task.notif?.enabled;
+                            return `
+                            <div class="flex items-center justify-between py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded group transition-colors">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">${task.name}</span>
+                                    ${hasNotif ? `<span class="text-[10px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 px-1.5 py-0.5 rounded font-medium flex items-center gap-1" title="Notificación a las ${task.notif.time}"><i class="fas fa-bell text-[9px]"></i> ${task.notif.time}</span>` : ''}
+                                </div>
                                 <div class="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                    <button onclick="moveTask('${cat.id}', ${tIdx}, -1)" class="text-gray-400 hover:text-blue-500 px-1 p-2" title="Subir"><i class="fas fa-chevron-up text-xs"></i></button>
-                                    <button onclick="moveTask('${cat.id}', ${tIdx}, 1)" class="text-gray-400 hover:text-blue-500 px-1 p-2" title="Bajar"><i class="fas fa-chevron-down text-xs"></i></button>
-                                    <button onclick="openTaskModal('${cat.id}', '${task.id}')" class="text-gray-400 hover:text-blue-500 px-1 p-2" title="Editar"><i class="fas fa-edit text-xs"></i></button>
-                                    <button onclick="deleteTask('${cat.id}', '${task.id}')" class="text-gray-400 hover:text-red-500 px-1 p-2" title="Eliminar"><i class="fas fa-trash text-xs"></i></button>
+                                    <button onclick="moveTask('${cat.id}', ${tIdx}, -1)" class="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 px-1 p-2" title="Subir"><i class="fas fa-chevron-up text-xs"></i></button>
+                                    <button onclick="moveTask('${cat.id}', ${tIdx}, 1)" class="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 px-1 p-2" title="Bajar"><i class="fas fa-chevron-down text-xs"></i></button>
+                                    <button onclick="openTaskModal('${cat.id}', '${task.id}')" class="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 px-1 p-2" title="Editar"><i class="fas fa-edit text-xs"></i></button>
+                                    <button onclick="deleteTask('${cat.id}', '${task.id}')" class="text-gray-400 hover:text-red-500 dark:hover:text-red-400 px-1 p-2" title="Eliminar"><i class="fas fa-trash text-xs"></i></button>
                                 </div>
                             </div>
-                        `).join('');
+                            `;
+                        }).join('');
+
+                    const areaHasNotif = cat.notif?.enabled;
 
                     return `
-                        <div class="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm border-l-4" style="border-left-color: ${hexColor};">
-                            <div class="bg-gray-50 px-4 py-3 flex items-center justify-between">
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800 shadow-sm border-l-4 transition-colors" style="border-left-color: ${hexColor};">
+                            <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <i class="fas ${cat.icon}" style="color: ${hexColor};"></i>
-                                    <h4 class="font-bold text-gray-800">${cat.name}</h4>
+                                    <h4 class="font-bold text-gray-800 dark:text-gray-100">${cat.name}</h4>
+                                    ${areaHasNotif ? `<span class="text-[10px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 px-1.5 py-0.5 rounded font-medium flex items-center gap-1" title="Notificación general del área a las ${cat.notif.time}"><i class="fas fa-bell text-[9px]"></i> ${cat.notif.time}</span>` : ''}
                                 </div>
                                 <div class="flex items-center gap-1 sm:gap-2">
-                                    <button onclick="moveArea(${catIdx}, -1)" class="text-gray-500 hover:text-gray-800 p-2"><i class="fas fa-arrow-up"></i></button>
-                                    <button onclick="moveArea(${catIdx}, 1)" class="text-gray-500 hover:text-gray-800 p-2"><i class="fas fa-arrow-down"></i></button>
-                                    <button onclick="openAreaModal('${cat.id}')" class="text-blue-600 hover:text-blue-800 p-2"><i class="fas fa-edit"></i></button>
-                                    <button onclick="deleteArea('${cat.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash"></i></button>
+                                    <button onclick="moveArea(${catIdx}, -1)" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-2"><i class="fas fa-arrow-up"></i></button>
+                                    <button onclick="moveArea(${catIdx}, 1)" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-2"><i class="fas fa-arrow-down"></i></button>
+                                    <button onclick="openAreaModal('${cat.id}')" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-2"><i class="fas fa-edit"></i></button>
+                                    <button onclick="deleteArea('${cat.id}')" class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 p-2"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>
                             <div class="p-3">
                                 <div class="space-y-1 mb-3">
                                     ${tasksHtml}
                                 </div>
-                                <button onclick="openTaskModal('${cat.id}')" class="text-xs font-medium text-gray-500 hover:text-gray-800 flex items-center gap-1 px-2 py-2">
+                                <button onclick="openTaskModal('${cat.id}')" class="text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-1 px-2 py-2">
                                     <i class="fas fa-plus"></i> Añadir actividad
                                 </button>
                             </div>
@@ -509,35 +966,77 @@
 
             // Render Journal Fields
             if (appConfig.journalFields.length === 0) {
-                journalContainer.innerHTML = '<p class="text-gray-400 text-sm italic">No hay secciones de anotaciones.</p>';
+                journalContainer.innerHTML = '<p class="text-gray-400 dark:text-gray-500 text-sm italic">No hay secciones de anotaciones.</p>';
             } else {
-                journalContainer.innerHTML = appConfig.journalFields.map((field, idx) => `
-                    <div class="flex items-center justify-between p-3 border border-gray-200 bg-white rounded-lg shadow-sm">
+                journalContainer.innerHTML = appConfig.journalFields.map((field, idx) => {
+                    const journalHasNotif = field.notif?.enabled;
+                    return `
+                    <div class="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg shadow-sm transition-colors">
                         <div class="flex items-center gap-3">
-                            <i class="fas ${field.icon} text-gray-500 w-5 text-center"></i>
-                            <span class="font-medium text-gray-700">${field.name}</span>
+                            <i class="fas ${field.icon} text-gray-500 dark:text-gray-400 w-5 text-center"></i>
+                            <span class="font-medium text-gray-700 dark:text-gray-200">${field.name}</span>
+                            ${journalHasNotif ? `<span class="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded font-medium flex items-center gap-1" title="Notificación a las ${field.notif.time}"><i class="fas fa-bell text-[9px]"></i> ${field.notif.time}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-1 sm:gap-2">
-                            <button onclick="moveJournalField(${idx}, -1)" class="text-gray-400 hover:text-blue-500 p-2"><i class="fas fa-arrow-up"></i></button>
-                            <button onclick="moveJournalField(${idx}, 1)" class="text-gray-400 hover:text-blue-500 p-2"><i class="fas fa-arrow-down"></i></button>
-                            <button onclick="openJournalModal('${field.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteJournalField('${field.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash"></i></button>
+                            <button onclick="moveJournalField(${idx}, -1)" class="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 p-2"><i class="fas fa-arrow-up"></i></button>
+                            <button onclick="moveJournalField(${idx}, 1)" class="text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 p-2"><i class="fas fa-arrow-down"></i></button>
+                            <button onclick="openJournalModal('${field.id}')" class="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 p-2"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteJournalField('${field.id}')" class="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             }
         }
 
-        // Area Form Logic
-        function selectModalIcon(type, icon) {
-            document.getElementById(`${type}-icon`).value = icon;
-            document.querySelectorAll(`.icon-btn-${type}`).forEach(btn => {
-                if (btn.getAttribute('data-icon') === icon) {
-                    btn.className = `icon-btn-${type} p-2 text-center rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-600 font-bold transition-all`;
+        function toggleNotifFields(type) {
+            const enabled = document.getElementById(`${type}-notif-enable`).checked;
+            const fieldsContainer = document.getElementById(`${type}-notif-fields`);
+            if (fieldsContainer) {
+                if (enabled) {
+                    fieldsContainer.classList.remove('hidden');
                 } else {
-                    btn.className = `icon-btn-${type} p-2 text-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all`;
+                    fieldsContainer.classList.add('hidden');
                 }
-            });
+            }
+        }
+
+        function getNotificationFieldsHTML(prefix, notifData) {
+            const notif = notifData || { enabled: false, time: '20:00', intervalMinutes: 15, maxRepeats: 3 };
+            return `
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                    <label class="flex items-center gap-2 font-medium text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        <input type="checkbox" id="${prefix}-notif-enable" class="custom-checkbox" onchange="toggleNotifFields('${prefix}')" ${notif.enabled ? 'checked' : ''}>
+                        <span><i class="fas fa-bell text-yellow-500 mr-1"></i> Configurar Notificación / Recordatorio</span>
+                    </label>
+
+                    <div id="${prefix}-notif-fields" class="${notif.enabled ? '' : 'hidden'} mt-3 space-y-3 bg-gray-50 dark:bg-gray-700/40 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1">Hora del Primer Recordatorio</label>
+                            <input type="time" id="${prefix}-notif-time" value="${notif.time || '20:00'}" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1">Repetir cada (Minutos)</label>
+                                <input type="number" id="${prefix}-notif-interval" min="1" max="1440" value="${notif.intervalMinutes || 15}" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1">Máx. Repeticiones</label>
+                                <input type="number" id="${prefix}-notif-max" min="1" max="20" value="${notif.maxRepeats || 3}" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" title="Cantidad de avisos si la actividad sigue incompleta">
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 italic">Si el aviso se descarta sin completar la tarea, la app volverá a notificar según el intervalo y tope configurado.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function extractNotificationData(prefix) {
+            const enabled = document.getElementById(`${prefix}-notif-enable`).checked;
+            const time = document.getElementById(`${prefix}-notif-time`).value || '20:00';
+            const intervalMinutes = parseInt(document.getElementById(`${prefix}-notif-interval`).value) || 15;
+            const maxRepeats = parseInt(document.getElementById(`${prefix}-notif-max`).value) || 3;
+            return { enabled, time, intervalMinutes, maxRepeats };
         }
 
         function openAreaModal(areaId = null) {
@@ -545,7 +1044,7 @@
             const selectedIcon = area ? area.icon : AVAILABLE_ICONS[0];
             
             const iconGridHtml = AVAILABLE_ICONS.map(icon => `
-                <button type="button" onclick="selectModalIcon('area', '${icon}')" class="icon-btn-area p-2 text-center rounded-lg border ${selectedIcon === icon ? 'border-2 border-blue-500 bg-blue-50 text-blue-600 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'} transition-all" data-icon="${icon}">
+                <button type="button" onclick="selectModalIcon('area', '${icon}')" class="icon-btn-area p-2 text-center rounded-lg border ${selectedIcon === icon ? 'border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold' : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'} transition-all" data-icon="${icon}">
                     <i class="fas ${icon} text-lg"></i>
                 </button>
             `).join('');
@@ -553,25 +1052,26 @@
             const html = `
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Área</label>
-                        <input type="text" id="area-name" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej. Física, Emocional..." value="${area ? area.name : ''}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Área</label>
+                        <input type="text" id="area-name" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-colors" placeholder="Ej. Física, Emocional..." value="${area ? area.name : ''}">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
-                        <div class="flex items-center gap-3 bg-gray-50 p-2.5 border border-gray-200 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color</label>
+                        <div class="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/50 p-2.5 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">
                             <input type="color" id="area-color" class="w-12 h-12 border-0 rounded cursor-pointer p-0 bg-transparent outline-none focus:ring-2 focus:ring-blue-500" value="${getHexColor(area ? area.color : '#3b82f6')}" title="Elegir color">
-                            <span class="text-sm text-gray-600 flex items-center gap-2 font-medium">
+                            <span class="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2 font-medium">
                                 <i class="fas fa-hand-pointer text-blue-500 text-lg"></i> Haz clic en el cuadro para cambiar el color
                             </span>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un Icono</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selecciona un Icono</label>
                         <input type="hidden" id="area-icon" value="${selectedIcon}">
-                        <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-gray-50">
+                        <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors">
                             ${iconGridHtml}
                         </div>
                     </div>
+                    ${getNotificationFieldsHTML('area', area ? area.notif : null)}
                 </div>
             `;
 
@@ -579,14 +1079,15 @@
                 const name = document.getElementById('area-name').value.trim();
                 const color = document.getElementById('area-color').value;
                 const icon = document.getElementById('area-icon').value;
+                const notif = extractNotificationData('area');
 
                 if (!name) { showToast('El nombre es obligatorio', 'error'); return false; }
 
                 if (area) {
-                    area.name = name; area.color = color; area.icon = icon;
+                    area.name = name; area.color = color; area.icon = icon; area.notif = notif;
                     showToast('Área actualizada');
                 } else {
-                    appConfig.categories.push({ id: generateId(), name, color, icon, tasks: [] });
+                    appConfig.categories.push({ id: generateId(), name, color, icon, notif, tasks: [] });
                     showToast('Área creada');
                 }
                 renderConfigView();
@@ -594,40 +1095,32 @@
             });
         }
 
-        function deleteArea(areaId) {
-            openConfirmDialog('Eliminar Área', 'Se eliminará esta área y todas sus actividades. Los datos históricos relacionados podrían verse afectados.', () => {
-                appConfig.categories = appConfig.categories.filter(c => c.id !== areaId);
-                showToast('Área eliminada');
-                renderConfigView();
-            });
-        }
-
-        function moveArea(index, direction) {
-            moveItem(appConfig.categories, index, direction);
-            renderConfigView();
-        }
-
-        // Task Form Logic
         function openTaskModal(areaId, taskId = null) {
             const area = appConfig.categories.find(c => c.id === areaId);
             const task = taskId ? area.tasks.find(t => t.id === taskId) : null;
 
             const html = `
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Actividad</label>
-                    <input type="text" id="task-name" class="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej. Leer 30 minutos..." value="${task ? task.name : ''}">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre de la Actividad</label>
+                        <input type="text" id="task-name" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-colors" placeholder="Ej. Leer 30 minutos..." value="${task ? task.name : ''}">
+                    </div>
+                    ${getNotificationFieldsHTML('task', task ? task.notif : null)}
                 </div>
             `;
 
             openModal(task ? 'Editar Actividad' : 'Nueva Actividad', html, () => {
                 const name = document.getElementById('task-name').value.trim();
+                const notif = extractNotificationData('task');
+
                 if (!name) { showToast('El nombre es obligatorio', 'error'); return false; }
 
                 if (task) {
                     task.name = name;
+                    task.notif = notif;
                     showToast('Actividad actualizada');
                 } else {
-                    area.tasks.push({ id: generateId(), name });
+                    area.tasks.push({ id: generateId(), name, notif });
                     showToast('Actividad añadida');
                 }
                 renderConfigView();
@@ -635,25 +1128,12 @@
             });
         }
 
-        function deleteTask(areaId, taskId) {
-            const area = appConfig.categories.find(c => c.id === areaId);
-            area.tasks = area.tasks.filter(t => t.id !== taskId);
-            renderConfigView();
-        }
-
-        function moveTask(areaId, taskIndex, direction) {
-            const area = appConfig.categories.find(c => c.id === areaId);
-            moveItem(area.tasks, taskIndex, direction);
-            renderConfigView();
-        }
-
-        // Journal Fields Logic
         function openJournalModal(fieldId = null) {
             const field = fieldId ? appConfig.journalFields.find(f => f.id === fieldId) : null;
             const selectedIcon = field ? field.icon : AVAILABLE_ICONS[0];
             
             const iconGridHtml = AVAILABLE_ICONS.map(icon => `
-                <button type="button" onclick="selectModalIcon('journal', '${icon}')" class="icon-btn-journal p-2 text-center rounded-lg border ${selectedIcon === icon ? 'border-2 border-purple-500 bg-purple-50 text-purple-600 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'} transition-all" data-icon="${icon}">
+                <button type="button" onclick="selectModalIcon('journal', '${icon}')" class="icon-btn-journal p-2 text-center rounded-lg border ${selectedIcon === icon ? 'border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-bold' : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'} transition-all" data-icon="${icon}">
                     <i class="fas ${icon} text-lg"></i>
                 </button>
             `).join('');
@@ -661,29 +1141,32 @@
             const html = `
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Título de la sección</label>
-                        <input type="text" id="journal-name" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej. Gratitud, Notas..." value="${field ? field.name : ''}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título de la sección</label>
+                        <input type="text" id="journal-name" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-colors" placeholder="Ej. Gratitud, Notas..." value="${field ? field.name : ''}">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un Icono</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selecciona un Icono</label>
                         <input type="hidden" id="journal-icon" value="${selectedIcon}">
-                        <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-gray-50">
+                        <div class="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 transition-colors">
                             ${iconGridHtml}
                         </div>
                     </div>
+                    ${getNotificationFieldsHTML('journal', field ? field.notif : null)}
                 </div>
             `;
 
             openModal(field ? 'Editar Sección' : 'Nueva Sección', html, () => {
                 const name = document.getElementById('journal-name').value.trim();
                 const icon = document.getElementById('journal-icon').value;
+                const notif = extractNotificationData('journal');
+
                 if (!name) { showToast('El nombre es obligatorio', 'error'); return false; }
 
                 if (field) {
-                    field.name = name; field.icon = icon;
+                    field.name = name; field.icon = icon; field.notif = notif;
                     showToast('Sección actualizada');
                 } else {
-                    appConfig.journalFields.push({ id: generateId(), name, icon });
+                    appConfig.journalFields.push({ id: generateId(), name, icon, notif });
                     showToast('Sección añadida');
                 }
                 renderConfigView();
@@ -696,7 +1179,7 @@
                 appConfig.journalFields = appConfig.journalFields.filter(f => f.id !== fieldId);
                 showToast('Sección eliminada');
                 renderConfigView();
-            });
+            }, 'bg-red-600');
         }
 
         function moveJournalField(index, direction) {
@@ -724,17 +1207,17 @@
                 const hexColor = getHexColor(cat.color);
                 
                 const tasksHtml = cat.tasks.map(task => `
-                    <label class="flex items-start gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer group">
+                    <label class="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer group">
                         <input type="checkbox" 
                                class="custom-checkbox mt-0.5 task-checkbox" 
                                data-category-id="${cat.id}" 
                                data-task-id="${task.id}"
                                onchange="toggleTask(this, '${cat.id}', '${task.id}')">
                         <div class="flex-1 flex flex-col">
-                            <span class="text-gray-700 text-sm transition-all" id="task-name-${task.id}">${task.name}</span>
+                            <span class="text-gray-700 dark:text-gray-200 text-sm transition-all task-text" id="task-name-${task.id}">${task.name}</span>
                             <div class="flex items-center gap-2 mt-0.5">
-                                <span class="text-[10px] text-gray-400 font-medium time-stamp" id="time-${task.id}"></span>
-                                <button type="button" id="edit-time-btn-${task.id}" onclick="editTaskTime('${task.id}', event)" class="hidden text-[11px] text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                <span class="text-[10px] text-gray-400 dark:text-gray-500 font-medium time-stamp" id="time-${task.id}"></span>
+                                <button type="button" id="edit-time-btn-${task.id}" onclick="editTaskTime('${task.id}', event)" class="hidden text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium hover:underline flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800/50">
                                     <i class="fas fa-pencil-alt text-[9px]"></i> Editar hora
                                 </button>
                             </div>
@@ -743,18 +1226,18 @@
                 `).join('');
 
                 return `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col border-t-4" style="border-top-color: ${hexColor};">
-                        <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col border-t-4 transition-colors" style="border-top-color: ${hexColor};">
+                        <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
                             <div class="flex items-center gap-2">
                                 <i class="fas ${cat.icon}" style="color: ${hexColor};"></i>
-                                <h3 class="font-semibold text-gray-800">${cat.name}</h3>
+                                <h3 class="font-semibold text-gray-800 dark:text-gray-100">${cat.name}</h3>
                             </div>
                             <span class="text-sm font-bold" style="color: ${hexColor};" id="score-text-${cat.id}">0/${cat.tasks.length}</span>
                         </div>
                         <div class="p-4 flex-1 flex flex-col gap-1">
-                            ${tasksHtml || '<p class="text-sm text-gray-400 italic">No hay actividades</p>'}
+                            ${tasksHtml || '<p class="text-sm text-gray-400 dark:text-gray-500 italic">No hay actividades</p>'}
                         </div>
-                        <div class="h-1.5 w-full bg-gray-100">
+                        <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-700">
                             <div class="h-full score-bar" id="score-bar-${cat.id}" style="background-color: ${hexColor}; width: 0%"></div>
                         </div>
                     </div>
@@ -763,11 +1246,11 @@
 
             // Render Journal Fields
             journalContainer.innerHTML = appConfig.journalFields.map(field => `
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <i class="fas ${field.icon} text-gray-500"></i> ${field.name}
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700 transition-colors">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2">
+                        <i class="fas ${field.icon} text-gray-500 dark:text-gray-400"></i> ${field.name}
                     </h3>
-                    <textarea id="journal-${field.id}" rows="4" oninput="autoSaveDayData()" class="w-full border border-gray-200 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-shadow journal-input" placeholder="Escribe aquí..."></textarea>
+                    <textarea id="journal-${field.id}" rows="4" oninput="autoSaveDayData()" class="w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-shadow journal-input" placeholder="Escribe aquí..."></textarea>
                 </div>
             `).join('');
 
@@ -786,8 +1269,8 @@
                 
                 if (timeSpan) timeSpan.innerText = `(Completado: ${timeStr})`;
                 if (nameSpan) {
-                    nameSpan.classList.add('line-through', 'text-gray-400');
-                    nameSpan.classList.remove('text-gray-700');
+                    nameSpan.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+                    nameSpan.classList.remove('text-gray-700', 'dark:text-gray-200');
                 }
                 if (editBtn) editBtn.classList.remove('hidden');
                 showToast('Actividad completada y guardada', 'success');
@@ -795,8 +1278,8 @@
                 checkbox.removeAttribute('data-time');
                 if (timeSpan) timeSpan.innerText = '';
                 if (nameSpan) {
-                    nameSpan.classList.remove('line-through', 'text-gray-400');
-                    nameSpan.classList.add('text-gray-700');
+                    nameSpan.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+                    nameSpan.classList.add('text-gray-700', 'dark:text-gray-200');
                 }
                 if (editBtn) editBtn.classList.add('hidden');
                 showToast('Actividad desmarcada y actualizada', 'success');
@@ -816,8 +1299,8 @@
 
             const html = `
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Ingresa la nueva hora de completado</label>
-                    <input type="time" id="new-task-time" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-medium" value="${currentTime}">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ingresa la nueva hora de completado</label>
+                    <input type="time" id="new-task-time" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-medium transition-colors" value="${currentTime}">
                 </div>
             `;
 
@@ -843,7 +1326,6 @@
 
             const data = db[currentDate];
             
-            // Reset UI
             document.querySelectorAll('.task-checkbox').forEach(cb => {
                 cb.checked = false;
                 cb.removeAttribute('data-time');
@@ -854,31 +1336,28 @@
 
                 if (timeSpan) timeSpan.innerText = '';
                 if (nameSpan) {
-                    nameSpan.classList.remove('line-through', 'text-gray-400');
-                    nameSpan.classList.add('text-gray-700');
+                    nameSpan.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+                    nameSpan.classList.add('text-gray-700', 'dark:text-gray-200');
                 }
                 if (editBtn) editBtn.classList.add('hidden');
             });
             document.querySelectorAll('.journal-input').forEach(ta => ta.value = '');
 
             if (data) {
-                // Populate checkboxes
                 if (data.completedTasks) {
                     if (Array.isArray(data.completedTasks)) {
-                        // Compatibility with old arrays
                         data.completedTasks.forEach(taskId => {
                             const cb = document.querySelector(`.task-checkbox[data-task-id="${taskId}"]`);
                             const nameSpan = document.getElementById(`task-name-${taskId}`);
                             if (cb) {
                                 cb.checked = true;
                                 if (nameSpan) {
-                                    nameSpan.classList.add('line-through', 'text-gray-400');
-                                    nameSpan.classList.remove('text-gray-700');
+                                    nameSpan.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+                                    nameSpan.classList.remove('text-gray-700', 'dark:text-gray-200');
                                 }
                             }
                         });
                     } else {
-                        // New key-value object format with completion times
                         Object.entries(data.completedTasks).forEach(([taskId, timeStr]) => {
                             const cb = document.querySelector(`.task-checkbox[data-task-id="${taskId}"]`);
                             const timeSpan = document.getElementById(`time-${taskId}`);
@@ -890,8 +1369,8 @@
                                 cb.setAttribute('data-time', timeStr);
                                 if(timeSpan) timeSpan.innerText = `(Completado: ${timeStr})`;
                                 if (nameSpan) {
-                                    nameSpan.classList.add('line-through', 'text-gray-400');
-                                    nameSpan.classList.remove('text-gray-700');
+                                    nameSpan.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+                                    nameSpan.classList.remove('text-gray-700', 'dark:text-gray-200');
                                 }
                                 if (editBtn) editBtn.classList.remove('hidden');
                             }
@@ -899,7 +1378,6 @@
                     }
                 }
                 
-                // Populate journal fields
                 if (data.journal) {
                     Object.entries(data.journal).forEach(([fieldId, text]) => {
                         const el = document.getElementById(`journal-${fieldId}`);
@@ -914,7 +1392,7 @@
         function autoSaveDayData() {
             if (appConfig.categories.length === 0 && appConfig.journalFields.length === 0) return;
 
-            const completedTasks = {}; // Cambiado a objeto para guardar horas
+            const completedTasks = {}; 
             const categoryScores = {}; 
             let totalTasksApp = 0;
             let totalCompletedApp = 0;
@@ -956,7 +1434,7 @@
                 journal
             };
 
-            saveData(); // Autoguardado silencioso
+            saveData(); 
         }
 
         function calculateLiveScores() {
@@ -974,7 +1452,6 @@
                 totalTasks += totalCatTasks;
                 totalCompleted += completed;
 
-                // Update category UI
                 const scoreTextEl = document.getElementById(`score-text-${cat.id}`);
                 const scoreBarEl = document.getElementById(`score-bar-${cat.id}`);
                 
@@ -983,12 +1460,11 @@
                 const percentage = totalCatTasks === 0 ? 0 : (completed / totalCatTasks) * 100;
                 if(scoreBarEl) scoreBarEl.style.width = `${percentage}%`;
 
-                // Update Mini Scores
                 const hexColor = getHexColor(cat.color);
                 if(totalCatTasks > 0) {
                     miniScoresHtml += `
                         <div class="flex flex-col items-center min-w-[60px]">
-                            <span class="text-xs text-gray-500 font-medium truncate w-16 text-center" title="${cat.name}">${cat.name}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium truncate w-16 text-center" title="${cat.name}">${cat.name}</span>
                             <span class="text-lg font-bold" style="color: ${hexColor}">${Math.round(percentage)}%</span>
                         </div>
                     `;
@@ -1000,10 +1476,10 @@
             const totalScoreEl = document.getElementById('daily-total-score');
             totalScoreEl.innerText = `${totalPercentage}%`;
             totalScoreEl.className = `text-4xl font-bold mt-1 ${
-                totalTasks === 0 ? 'text-gray-400' :
-                totalPercentage >= 80 ? 'text-green-600' : 
-                totalPercentage >= 50 ? 'text-blue-600' : 
-                totalPercentage >= 30 ? 'text-orange-500' : 'text-red-500'
+                totalTasks === 0 ? 'text-gray-400 dark:text-gray-500' :
+                totalPercentage >= 80 ? 'text-green-600 dark:text-green-500' : 
+                totalPercentage >= 50 ? 'text-blue-600 dark:text-blue-500' : 
+                totalPercentage >= 30 ? 'text-orange-500 dark:text-orange-400' : 'text-red-500 dark:text-red-400'
             }`;
 
             document.getElementById('daily-mini-scores').innerHTML = miniScoresHtml;
@@ -1018,10 +1494,10 @@
             
             if (monthDays.length === 0) {
                 content.innerHTML = `
-                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-                        <i class="fas fa-folder-open text-gray-400 text-4xl mb-3"></i>
-                        <h3 class="text-lg font-medium text-gray-700">No hay datos para este mes</h3>
-                        <p class="text-gray-500 mt-1">Guarda tu progreso diario para ver las estadísticas aquí.</p>
+                    <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center transition-colors">
+                        <i class="fas fa-folder-open text-gray-400 dark:text-gray-500 text-4xl mb-3"></i>
+                        <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300">No hay datos para este mes</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mt-1">Guarda tu progreso diario para ver las estadísticas aquí.</p>
                     </div>`;
                 return;
             }
@@ -1030,7 +1506,6 @@
             let bestDay = monthDays[0];
             let worstDay = monthDays[0];
 
-            // Setup trackers for current categories
             const categoryStats = {};
             appConfig.categories.forEach(cat => {
                 categoryStats[cat.id] = { sum: 0, count: 0, best: null, worst: null };
@@ -1041,7 +1516,6 @@
                 if (day.totalScore > bestDay.totalScore) bestDay = day;
                 if (day.totalScore < worstDay.totalScore) worstDay = day;
 
-                // Process categories that existed when day was saved
                 Object.entries(day.categoryScores || {}).forEach(([catId, score]) => {
                     if (categoryStats[catId]) {
                         categoryStats[catId].sum += score;
@@ -1061,35 +1535,35 @@
 
             let html = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-blue-50 rounded-xl p-6 border border-blue-100 flex flex-col items-center justify-center text-center">
-                        <span class="text-blue-600 font-semibold mb-1">Promedio General</span>
-                        <span class="text-5xl font-bold text-blue-700">${avgTotal}%</span>
-                        <span class="text-sm text-blue-500 mt-2">${monthDays.length} días registrados</span>
+                    <div class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-6 border border-blue-100 dark:border-blue-800/50 flex flex-col items-center justify-center text-center transition-colors">
+                        <span class="text-blue-600 dark:text-blue-400 font-semibold mb-1">Promedio General</span>
+                        <span class="text-5xl font-bold text-blue-700 dark:text-blue-300">${avgTotal}%</span>
+                        <span class="text-sm text-blue-500 dark:text-blue-400 mt-2">${monthDays.length} días registrados</span>
                     </div>
                     
-                    <div class="bg-green-50 rounded-xl p-6 border border-green-100 flex flex-col justify-center items-center">
-                        <div class="flex items-center gap-2 text-green-700 mb-2">
+                    <div class="bg-green-50 dark:bg-green-900/30 rounded-xl p-6 border border-green-100 dark:border-green-800/50 flex flex-col justify-center items-center transition-colors">
+                        <div class="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
                             <i class="fas fa-trophy"></i>
                             <span class="font-semibold">Mejor Día</span>
                         </div>
-                        <div class="text-2xl font-bold text-green-800">${bestDay.date}</div>
-                        <div class="text-sm font-bold text-green-600 mt-1">Calificación: ${bestDay.totalScore}%</div>
+                        <div class="text-2xl font-bold text-green-800 dark:text-green-300">${bestDay.date}</div>
+                        <div class="text-sm font-bold text-green-600 dark:text-green-400 mt-1">Calificación: ${bestDay.totalScore}%</div>
                     </div>
 
-                    <div class="bg-red-50 rounded-xl p-6 border border-red-100 flex flex-col justify-center items-center">
-                        <div class="flex items-center gap-2 text-red-700 mb-2">
+                    <div class="bg-red-50 dark:bg-red-900/30 rounded-xl p-6 border border-red-100 dark:border-red-800/50 flex flex-col justify-center items-center transition-colors">
+                        <div class="flex items-center gap-2 text-red-700 dark:text-red-400 mb-2">
                             <i class="fas fa-exclamation-triangle"></i>
                             <span class="font-semibold">Peor Día</span>
                         </div>
-                        <div class="text-2xl font-bold text-red-800">${worstDay.date}</div>
-                        <div class="text-sm font-bold text-red-600 mt-1">Calificación: ${worstDay.totalScore}%</div>
+                        <div class="text-2xl font-bold text-red-800 dark:text-red-300">${worstDay.date}</div>
+                        <div class="text-sm font-bold text-red-600 dark:text-red-400 mt-1">Calificación: ${worstDay.totalScore}%</div>
                     </div>
                 </div>
             `;
 
             if (appConfig.categories.length > 0) {
                 html += `
-                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Desglose por Área</h3>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4 border-b dark:border-gray-700 pb-2">Desglose por Área</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 `;
 
@@ -1099,11 +1573,11 @@
                     
                     if (stats.count === 0) {
                         html += `
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 opacity-60">
-                                <h4 class="font-semibold text-gray-800 flex items-center gap-2 mb-2">
-                                    <i class="fas ${cat.icon} text-gray-400"></i> ${cat.name}
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 opacity-60 transition-colors">
+                                <h4 class="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2 mb-2">
+                                    <i class="fas ${cat.icon} text-gray-400 dark:text-gray-500"></i> ${cat.name}
                                 </h4>
-                                <p class="text-sm text-gray-400">Sin datos este mes</p>
+                                <p class="text-sm text-gray-400 dark:text-gray-500">Sin datos este mes</p>
                             </div>
                         `;
                         return;
@@ -1112,27 +1586,27 @@
                     const avgScore = Math.round(stats.sum / stats.count);
                     
                     html += `
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 transition-colors">
                             <div class="flex justify-between items-center mb-4">
                                 <div class="flex items-center gap-2">
                                     <i class="fas ${cat.icon}" style="color: ${hexColor};"></i>
-                                    <h4 class="font-semibold text-gray-800">${cat.name}</h4>
+                                    <h4 class="font-semibold text-gray-800 dark:text-gray-100">${cat.name}</h4>
                                 </div>
                                 <span class="text-xl font-bold" style="color: ${hexColor};">${avgScore}%</span>
                             </div>
                             
-                            <div class="w-full bg-gray-100 rounded-full h-2 mb-4">
+                            <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-4">
                                 <div class="h-2 rounded-full" style="background-color: ${hexColor}; width: ${avgScore}%"></div>
                             </div>
 
                             <div class="text-sm space-y-2">
                                 <div class="flex justify-between">
-                                    <span class="text-gray-500">Mejor:</span>
-                                    <span class="font-medium text-gray-700">${stats.best.date} <span class="text-xs font-bold text-green-500">(${Math.round(stats.best.score)}%)</span></span>
+                                    <span class="text-gray-500 dark:text-gray-400">Mejor:</span>
+                                    <span class="font-medium text-gray-700 dark:text-gray-200">${stats.best.date} <span class="text-xs font-bold text-green-500 dark:text-green-400">(${Math.round(stats.best.score)}%)</span></span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-gray-500">Peor:</span>
-                                    <span class="font-medium text-gray-700">${stats.worst.date} <span class="text-xs font-bold text-red-500">(${Math.round(stats.worst.score)}%)</span></span>
+                                    <span class="text-gray-500 dark:text-gray-400">Peor:</span>
+                                    <span class="font-medium text-gray-700 dark:text-gray-200">${stats.worst.date} <span class="text-xs font-bold text-red-500 dark:text-red-400">(${Math.round(stats.worst.score)}%)</span></span>
                                 </div>
                             </div>
                         </div>
@@ -1172,7 +1646,6 @@
         function renderHistoryView() {
             const content = document.getElementById('history-content');
             
-            // Obtener todos los meses únicos disponibles para el filtro
             const allMonths = [...new Set(Object.values(db).map(d => d.month))].sort().reverse();
             
             const filterEl = document.getElementById('history-month-filter');
@@ -1183,7 +1656,6 @@
             const startDate = startDateEl ? startDateEl.value : '';
             const endDate = endDateEl ? endDateEl.value : '';
 
-            // Actualizar las opciones del select dinámicamente si no se han cargado
             if (filterEl) {
                 let optionsHtml = '<option value="all">Todos los meses</option>';
                 allMonths.forEach(m => {
@@ -1192,14 +1664,11 @@
                 filterEl.innerHTML = optionsHtml;
             }
 
-            // Filtrar los datos
             let daysToProcess = Object.values(db);
             
             if (selectedMonth !== 'all') {
-                // Si hay un mes seleccionado, filtramos por ese mes
                 daysToProcess = daysToProcess.filter(d => d.month === selectedMonth);
             } else if (startDate || endDate) {
-                // Si hay rango de fechas, filtramos por fecha de inicio y fin
                 if (startDate) daysToProcess = daysToProcess.filter(d => d.date >= startDate);
                 if (endDate) daysToProcess = daysToProcess.filter(d => d.date <= endDate);
             }
@@ -1218,9 +1687,9 @@
 
             if (monthsArray.length === 0) {
                 content.innerHTML = `
-                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-                        <i class="fas fa-search text-gray-400 text-3xl mb-3"></i>
-                        <p class="text-gray-500">No hay datos para mostrar con los filtros actuales.</p>
+                    <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center transition-colors">
+                        <i class="fas fa-search text-gray-400 dark:text-gray-500 text-3xl mb-3"></i>
+                        <p class="text-gray-500 dark:text-gray-400">No hay datos para mostrar con los filtros actuales.</p>
                     </div>`;
                 return;
             }
@@ -1229,23 +1698,22 @@
 
             monthsArray.forEach(m => {
                 const avg = Math.round(m.sum / m.count);
-                const scoreColor = avg >= 80 ? 'text-green-600' : avg >= 50 ? 'text-blue-600' : 'text-red-500';
+                const scoreColor = avg >= 80 ? 'text-green-600 dark:text-green-500' : avg >= 50 ? 'text-blue-600 dark:text-blue-500' : 'text-red-500 dark:text-red-400';
                 
-                // Ordenar días del más reciente al más antiguo dentro del mes
                 m.days.sort((a, b) => b.date.localeCompare(a.date));
 
                 html += `
-                    <div class="bg-white shadow-sm border border-gray-100 rounded-xl overflow-hidden">
-                        <div class="bg-gray-50 px-4 sm:px-6 py-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden transition-colors">
+                        <div class="bg-gray-50 dark:bg-gray-700/50 px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors">
                             <div>
-                                <h3 class="text-lg font-bold text-gray-800 capitalize">${formatMonth(m.monthStr)}</h3>
-                                <p class="text-sm text-gray-500">${m.count} días registrados • Promedio: <span class="font-bold ${scoreColor}">${avg}%</span></p>
+                                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 capitalize">${formatMonth(m.monthStr)}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">${m.count} días registrados • Promedio: <span class="font-bold ${scoreColor}">${avg}%</span></p>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <button onclick="toggleMonthDetails('${m.monthStr}')" class="flex-1 md:flex-none text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2">
+                                <button onclick="toggleMonthDetails('${m.monthStr}')" class="flex-1 md:flex-none text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 px-3 py-1.5 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2">
                                     <i class="fas fa-calendar-day"></i> Ver Días
                                 </button>
-                                <button onclick="deleteMonthHistory('${m.monthStr}')" class="flex-1 md:flex-none text-sm bg-red-50 border border-red-100 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                                <button onclick="deleteMonthHistory('${m.monthStr}')" class="flex-1 md:flex-none text-sm bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800/50 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-800/80 px-3 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-2">
                                     <i class="fas fa-trash"></i> Eliminar Mes
                                 </button>
                             </div>
@@ -1254,48 +1722,47 @@
                         <div id="details-${m.monthStr}" class="hidden">
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse min-w-[300px]">
-                                    <thead class="bg-gray-50/50 text-xs text-gray-500 uppercase">
+                                    <thead class="bg-gray-50/50 dark:bg-gray-700/30 text-xs text-gray-500 dark:text-gray-400 uppercase">
                                         <tr>
                                             <th class="py-3 px-4 sm:px-6 font-medium">Fecha</th>
                                             <th class="py-3 px-4 sm:px-6 font-medium">Calificación</th>
                                             <th class="py-3 px-4 sm:px-6 font-medium text-right">Acciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y divide-gray-100 text-sm">
+                                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
                 `;
 
-                // Mapear nombres de tareas para mostrarlos en el historial
                 const taskNameMap = {};
                 appConfig.categories.forEach(c => c.tasks.forEach(t => taskNameMap[t.id] = t.name));
 
                 m.days.forEach(day => {
-                    const dayScoreColor = day.totalScore >= 80 ? 'text-green-600' : day.totalScore >= 50 ? 'text-blue-600' : 'text-red-500';
+                    const dayScoreColor = day.totalScore >= 80 ? 'text-green-600 dark:text-green-500' : day.totalScore >= 50 ? 'text-blue-600 dark:text-blue-500' : 'text-red-500 dark:text-red-400';
                     
                     let tasksDetailsHtml = '';
                     if (day.completedTasks && !Array.isArray(day.completedTasks)) {
                         const taskEntries = Object.entries(day.completedTasks);
                         if (taskEntries.length > 0) {
-                            tasksDetailsHtml = `<div class="mt-2 pl-3 border-l-2 border-gray-200 space-y-1">`;
+                            tasksDetailsHtml = `<div class="mt-2 pl-3 border-l-2 border-gray-200 dark:border-gray-600 space-y-1">`;
                             taskEntries.forEach(([tId, time]) => {
                                 const tName = taskNameMap[tId] || 'Actividad eliminada';
-                                tasksDetailsHtml += `<div class="flex items-center gap-2 text-xs"><span class="text-gray-600 font-medium">${tName}</span> <span class="text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]"><i class="far fa-clock mr-1"></i>${time}</span></div>`;
+                                tasksDetailsHtml += `<div class="flex items-center gap-2 text-xs"><span class="text-gray-600 dark:text-gray-400 font-medium">${tName}</span> <span class="text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[10px]"><i class="far fa-clock mr-1"></i>${time}</span></div>`;
                             });
                             tasksDetailsHtml += `</div>`;
                         }
                     }
 
                     html += `
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="py-4 px-4 sm:px-6 text-gray-800 font-medium align-top">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            <td class="py-4 px-4 sm:px-6 text-gray-800 dark:text-gray-200 font-medium align-top">
                                 <div>${day.date}</div>
                                 ${tasksDetailsHtml}
                             </td>
                             <td class="py-4 px-4 sm:px-6 font-bold ${dayScoreColor} align-top text-lg">${day.totalScore}%</td>
                             <td class="py-4 px-4 sm:px-6 text-right flex justify-end gap-1 align-top">
-                                <button onclick="editDayHistory('${day.date}')" class="text-blue-500 hover:text-blue-700 p-2 rounded hover:bg-blue-50 transition-colors" title="Editar este día">
+                                <button onclick="editDayHistory('${day.date}')" class="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 p-2 rounded hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors" title="Editar este día">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteDayHistory('${day.date}')" class="text-red-500 hover:text-red-700 p-2 rounded hover:bg-red-50 transition-colors" title="Eliminar este día">
+                                <button onclick="deleteDayHistory('${day.date}')" class="text-red-500 hover:text-red-700 dark:hover:text-red-400 p-2 rounded hover:bg-red-50 dark:hover:bg-gray-600 transition-colors" title="Eliminar este día">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -1333,7 +1800,7 @@
                 saveData();
                 renderHistoryView();
                 showToast('Día eliminado exitosamente', 'success');
-            });
+            }, 'bg-red-600');
         }
 
         function deleteMonthHistory(monthStr) {
@@ -1346,13 +1813,79 @@
                 saveData();
                 renderHistoryView();
                 showToast('Mes eliminado exitosamente', 'success');
-            });
+            }, 'bg-red-600');
         }
 
         function formatMonth(yyyy_mm) {
             const [year, month] = yyy_mm.split('-');
             const date = new Date(year, parseInt(month) - 1, 1);
             return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        }
+
+        // ================= PWA & OFFLINE SUPPORT =================
+        function initPWA() {
+            // 1. Generar dinámicamente el Manifest (Standalone)
+            const manifest = {
+                "name": "Life Tracker App",
+                "short_name": "LifeTracker",
+                "description": "Tu balance diario y registro personal",
+                "start_url": window.location.href,
+                "display": "standalone",
+                "background_color": document.documentElement.classList.contains('dark') ? "#1f2937" : "#f3f4f6",
+                "theme_color": document.documentElement.classList.contains('dark') ? "#1f2937" : "#3b82f6",
+                "icons": [
+                    {
+                        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn4yxPC90ZXh0Pjwvc3ZnPg==",
+                        "sizes": "192x192",
+                        "type": "image/svg+xml",
+                        "purpose": "any maskable"
+                    },
+                    {
+                        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn4yxPC90ZXh0Pjwvc3ZnPg==",
+                        "sizes": "512x512",
+                        "type": "image/svg+xml",
+                        "purpose": "any maskable"
+                    }
+                ]
+            };
+            
+            const manifestHref = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestHref;
+            document.head.appendChild(link);
+
+            // 2. Escuchar evento para Instalar PWA
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault(); // Evitar que Chrome muestre el prompt automático
+                deferredPrompt = e;
+                const installBtn = document.getElementById('install-pwa-btn');
+                if(installBtn) installBtn.classList.remove('hidden');
+            });
+
+            // 3. Service Worker para funcionamiento Offline.
+            // IMPORTANTE: esto requiere que el archivo "sw.js" esté subido en el MISMO
+            // repositorio/carpeta que este HTML (ej. en GitHub Pages, junto a index.html).
+            // Si no lo subes, esta línea simplemente fallará en silencio y la app seguirá
+            // funcionando normal, solo sin caché offline.
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ Service Worker activo: la app funcionará offline.'))
+                    .catch(err => console.warn('No se pudo registrar el Service Worker (¿falta subir sw.js al repositorio?):', err));
+            }
+        }
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        showToast('¡Instalando Life Tracker!', 'success');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('install-pwa-btn').classList.add('hidden');
+                });
+            }
         }
     </script>
 </body>
