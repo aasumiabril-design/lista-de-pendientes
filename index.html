@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHECK LIST</title>
+    <title>Check List</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪴</text></svg>">
     
     <meta name="theme-color" content="#3b82f6" id="theme-color-meta">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Life Tracker">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZmZmZiIvPjx0ZXh0IHk9Ii45ZW0iIGZvbnQtc2l6ZT0iOTAiPvCfjLE8L3RleHQ+PC9zdmc+">
+    <meta name="apple-mobile-web-app-title" content="Check List">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmZmZmZiIvPjx0ZXh0IHk9Ii45ZW0iIGZvbnQtc2l6ZT0iOTAiPvCfqrQ8L3RleHQ+PC9zdmc+">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -94,7 +94,7 @@
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center gap-2">
-                    <i class="fas fa-leaf text-blue-500 text-2xl"></i>
+                    <span class="text-2xl">🪴</span>
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Check List</h1>
                 </div>
                 <div class="flex items-center gap-3 md:gap-4 text-sm text-gray-500 dark:text-gray-400">
@@ -587,7 +587,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appConfig, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `life_tracker_config_${currentDate}.json`);
+            downloadAnchor.setAttribute("download", `check_list_config_${currentDate}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
@@ -603,7 +603,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `life_tracker_backup_completo_${currentDate}.json`);
+            downloadAnchor.setAttribute("download", `check_list_backup_completo_${currentDate}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
@@ -777,17 +777,29 @@
             checkAndTriggerNotifications();
         }
 
-        function sendSystemNotification(title, body, tag) {
-            if (Notification.permission === "granted" && appConfig.notificationSettings.enabled) {
-                try {
-                    new Notification(title, {
-                        body: body,
-                        icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn4yxPC90ZXh0Pjwvc3ZnPg==",
-                        tag: tag
-                    });
-                } catch(e) {
-                    console.warn("Error enviando notificación nativa:", e);
+        // Ícono usado en las notificaciones (🪴)
+        const NOTIF_ICON = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn6q0PC90ZXh0Pjwvc3ZnPg==";
+
+        async function sendSystemNotification(title, body, tag) {
+            if (Notification.permission !== "granted" || !appConfig.notificationSettings.enabled) return;
+
+            const options = { body, icon: NOTIF_ICON, tag, renotify: true };
+
+            try {
+                // Preferimos el Service Worker para mostrar la notificación: es la única
+                // forma permitida en Chrome/Android cuando hay un SW activo, y funciona
+                // igual de bien en el resto de navegadores.
+                if ('serviceWorker' in navigator) {
+                    const reg = await navigator.serviceWorker.getRegistration();
+                    if (reg) {
+                        await reg.showNotification(title, options);
+                        return;
+                    }
                 }
+                // Fallback para navegadores/paginas sin Service Worker activo todavía
+                new Notification(title, options);
+            } catch (e) {
+                console.warn("Error enviando notificación:", e);
             }
         }
 
@@ -843,7 +855,7 @@
                     log.count++;
                     log.lastSentTime = nowTimestamp;
 
-                    const title = '⏰ Life Tracker';
+                    const title = '🪴 Check List';
                     const repeatInfo = maxRepeats > 1 ? ` (Aviso ${log.count}/${maxRepeats})` : '';
 
                     let body;
@@ -1835,13 +1847,13 @@
                 "theme_color": document.documentElement.classList.contains('dark') ? "#1f2937" : "#3b82f6",
                 "icons": [
                     {
-                        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn4yxPC90ZXh0Pjwvc3ZnPg==",
+                        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn6q0PC90ZXh0Pjwvc3ZnPg==",
                         "sizes": "192x192",
                         "type": "image/svg+xml",
                         "purpose": "any maskable"
                     },
                     {
-                        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn4yxPC90ZXh0Pjwvc3ZnPg==",
+                        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48dGV4dCB5PSIuOWVtIiBmb250LXNpemU9IjkwIj7wn6q0PC90ZXh0Pjwvc3ZnPg==",
                         "sizes": "512x512",
                         "type": "image/svg+xml",
                         "purpose": "any maskable"
@@ -1880,7 +1892,7 @@
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        showToast('¡Instalando Life Tracker!', 'success');
+                        showToast('¡Instalando Check List!', 'success');
                     }
                     deferredPrompt = null;
                     document.getElementById('install-pwa-btn').classList.add('hidden');
