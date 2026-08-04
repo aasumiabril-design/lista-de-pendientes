@@ -3,7 +3,7 @@
 // GitHub Pages lo sirve como un archivo real (mismo origen), por lo que
 // el navegador SÍ permite registrarlo (a diferencia de un blob: URL).
 
-const CACHE_NAME = 'life-tracker-cache-v1';
+const CACHE_NAME = 'check-list-cache-v1';
 
 // Al instalar, activamos este SW de inmediato sin esperar a que se cierren
 // las demás pestañas abiertas de la app.
