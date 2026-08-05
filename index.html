@@ -367,6 +367,32 @@
         </div>
     </div>
 
+    <!-- iOS Install Instructions Modal -->
+    <div id="ios-install-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-[60] p-4 transition-opacity">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">🪴 Instalar Check List</h3>
+                <button onclick="closeIOSInstallModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-4 text-sm text-gray-600 dark:text-gray-300">
+                <p>En iPhone/iPad, Safari no permite instalar apps con un botón directo. Se hace así, en 3 pasos:</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">1</div>
+                    <p>Toca el ícono <i class="fas fa-arrow-up-from-bracket mx-1"></i> <strong>Compartir</strong> en la barra de Safari (abajo o arriba, según tu modelo).</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">2</div>
+                    <p>Desliza hacia abajo en el menú y toca <strong>"Añadir a pantalla de inicio"</strong>.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">3</div>
+                    <p>Toca <strong>"Añadir"</strong> arriba a la derecha. Listo, el ícono 🪴 quedará en tu pantalla de inicio.</p>
+                </div>
+                <button onclick="closeIOSInstallModal()" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2 transition-colors">Entendido</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
     <script>
@@ -1888,6 +1914,31 @@
                 if(installBtn) installBtn.classList.remove('hidden');
             });
 
+            // --- Soporte específico para iOS/iPadOS ---
+            // Safari nunca dispara "beforeinstallprompt", así que ahí el botón de
+            // instalar debe mostrarse igual (si aún no está instalada) y, al tocarlo,
+            // explicar los pasos manuales en vez de intentar un prompt automático.
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                (window.navigator.standalone === true);
+
+            if (isIOS && !isStandalone) {
+                const installBtn = document.getElementById('install-pwa-btn');
+                if (installBtn) {
+                    installBtn.classList.remove('hidden');
+                    installBtn.setAttribute('onclick', 'openIOSInstallModal()');
+                }
+            }
+
+            // Pedimos almacenamiento "persistente" para reducir el riesgo de que el
+            // sistema (sobre todo iOS) borre el caché o los datos guardados si la app
+            // no se abre seguido. Es un "mejor esfuerzo": no todos los navegadores lo
+            // conceden, pero no cuesta nada intentarlo.
+            if ('storage' in navigator && navigator.storage.persist) {
+                navigator.storage.persist().catch(() => {});
+            }
+
             // 3. Service Worker para funcionamiento Offline.
             // IMPORTANTE: esto requiere que el archivo "sw.js" esté subido en el MISMO
             // repositorio/carpeta que este HTML (ej. en GitHub Pages, junto a index.html).
@@ -1898,6 +1949,14 @@
                     .then(reg => console.log('✅ Service Worker activo: la app funcionará offline.'))
                     .catch(err => console.warn('No se pudo registrar el Service Worker (¿falta subir sw.js al repositorio?):', err));
             }
+        }
+
+        function openIOSInstallModal() {
+            document.getElementById('ios-install-modal').classList.remove('hidden');
+        }
+
+        function closeIOSInstallModal() {
+            document.getElementById('ios-install-modal').classList.add('hidden');
         }
 
         function installPWA() {
